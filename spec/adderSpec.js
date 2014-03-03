@@ -1,4 +1,6 @@
 'use strict';
+/*global expect, describe, it, before, beforeEach, after, afterEach */
+/*global createAdder */
 
 describe("adder", function (){ 
   var adder;
@@ -8,7 +10,7 @@ describe("adder", function (){
   });
 
   it("should be capable of adding", function () {
-    expect(typeof adder.add === 'function').toBeTruthy;
+    expect(typeof adder.add === 'function').toBeTruthy();
   });
 
   it("should add normally", function() {
@@ -17,6 +19,6 @@ describe("adder", function (){
         var sum = adder.add(x,y);
         expect(sum).toEqual(x+y);
       }
-    };
+    }
   });
 });
