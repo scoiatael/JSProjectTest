@@ -11,7 +11,7 @@ module.exports = function(grunt) {
         banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
       },
       build: {
-        src: ['src/**/<%= pkg.name %>.js', 'react/**/<%= pkg.name %>.js'],
+        src: ['build/<%= pkg.name %>.js'],
         dest: 'build/<%= pkg.name %>.min.js'
       }
     },
@@ -19,10 +19,9 @@ module.exports = function(grunt) {
       options: {
         jshintrc: 'jshintrc.json'    
       },
-      common:      ['gruntfile.js', 'lib/**/*.js', 'test/**/*.js'],
+      common:      ['gruntfile.js', 'lib/**/*.js', 'test/**/*.js', 'JSProjectTest.js'],
       react:       ['react/**/*.js'],
-      beforebuild: ['src/**/*.js'],
-      afterbuild:  ['build/**/*.js']
+      beforebuild: ['src/**/*.js']
     },
     react: {
       files: {
@@ -38,6 +37,13 @@ module.exports = function(grunt) {
         files: ['src/**/*.jsx'],
         tasks: ['react', 'jshint:react']
       }
+    },
+    browserify: {
+      dist: {
+        files: {
+          'build/<%= pkg.name %>.js': ['<%= pkg.name %>.js']
+        }
+      }
     }
   });
 
@@ -46,8 +52,9 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-watch');
+  grunt.loadNpmTasks('grunt-browserify');
 
   // Default task(s).
-  grunt.registerTask('default', ['jshint:common', 'jshint:beforebuild', 'react', 'jshint:react', 'uglify']);
+  grunt.registerTask('default', ['jshint:common', 'jshint:beforebuild', 'react', 'jshint:react', 'browserify', 'uglify']);
 
 };
