@@ -21,7 +21,7 @@ module.exports = function(grunt) {
       },
       common:      ['gruntfile.js', 'lib/**/*.js', 'test/**/*.js', 'JSProjectTest.js'],
       react:       ['react/**/*.js'],
-      beforebuild: ['src/**/*.js']
+      beforebuild: ['src/**/*.js', 'spec/**/*.js']
     },
     react: {
       files: {
@@ -44,6 +44,15 @@ module.exports = function(grunt) {
           'build/<%= pkg.name %>.js': ['<%= pkg.name %>.js']
         }
       }
+    },
+    jasmine: {
+      src: {
+        src: ['src/**/*.js'],
+        options: {
+          specs: 'spec/*Spec.js',
+          helpers: 'spec/*Helper.js'
+        }
+      }
     }
   });
 
@@ -53,6 +62,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-browserify');
+  grunt.loadNpmTasks('grunt-contrib-jasmine');
 
   // Default task(s).
   grunt.registerTask('default', ['jshint:common', 'jshint:beforebuild', 'react', 'jshint:react', 'browserify', 'uglify']);
