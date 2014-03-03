@@ -1,3 +1,4 @@
+/* jshint node:true */
 'use strict';
 
 function createAdder() {
@@ -6,3 +7,5 @@ function createAdder() {
   }
   return { 'add' : plus };
 }
+
+module.exports = createAdder;

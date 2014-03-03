@@ -2,7 +2,7 @@
 /* jshint node:true*/
 var hello = require('./react/hello.js');
 
-hello();
+hello.render();
 
 },{"./react/hello.js":133}],2:[function(require,module,exports){
 // shim for using process in browser
@@ -16804,13 +16804,43 @@ module.exports = require('./lib/React');
 "use strict";
 var React = require("react");
 var mountNode = document.getElementById('hello');
+var adder = require("../src/adder.js")();
+var multiplier = require("../src/multiplier.js")();
 
 var helloMessage = React.createClass({displayName: 'helloMessage',
   render: function() {
-    return React.DOM.div(null, "Hello ", this.props.name);
+    var x = 2;
+    var y = 6;
+    return React.DOM.div(null, "Hello ", this.props.name,React.DOM.br(null), " ", x, " + ", y, " is ", adder.add(x,y), " ", React.DOM.br(null), " ", x, " * ", y, " is ", multiplier.mult(x,y));
   }
 });
 
-React.renderComponent(helloMessage( {name:"John"} ), mountNode);
+module.exports = { 'render' : function() { React.renderComponent(helloMessage( {name:"John"} ), mountNode); } };
 
-},{"react":132}]},{},[1])
+},{"../src/adder.js":134,"../src/multiplier.js":135,"react":132}],134:[function(require,module,exports){
+/* jshint node:true */
+'use strict';
+
+function createAdder() {
+  function plus(x, y) {
+    return x+y;
+  }
+  return { 'add' : plus };
+}
+
+module.exports = createAdder;
+
+},{}],135:[function(require,module,exports){
+/* jshint node:true */
+"use strict";
+
+function createMultiplier () {
+  function mult(x,y) {
+    return x*y;
+  }
+  return { 'mult':mult };
+}
+
+module.exports = createMultiplier;
+
+},{}]},{},[1])

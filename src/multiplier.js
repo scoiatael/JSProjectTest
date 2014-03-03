@@ -1,3 +1,5 @@
+/* jshint node:true */
+"use strict";
 
 function createMultiplier () {
   function mult(x,y) {
@@ -5,3 +7,5 @@ function createMultiplier () {
   }
   return { 'mult':mult };
 }
+
+module.exports = createMultiplier;

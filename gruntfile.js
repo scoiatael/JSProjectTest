@@ -19,7 +19,7 @@ module.exports = function(grunt) {
       options: {
         jshintrc: 'jshintrc.json'    
       },
-      common:      ['gruntfile.js', 'lib/**/*.js', 'test/**/*.js', 'JSProjectTest.js'],
+      common:      ['gruntfile.js', 'lib/**/*.js', 'test/**/*.js'],
       react:       ['react/**/*.js'],
       beforebuild: ['src/**/*.js', 'spec/**/*.js']
     },

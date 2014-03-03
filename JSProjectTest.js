@@ -1,4 +1,4 @@
 /* jshint node:true*/
 var hello = require('./react/hello.js');
 
-hello();
+hello.render();
