@@ -3,8 +3,8 @@
 "use strict";
 var React = require("react");
 var mountNode = document.getElementById('hello');
-var adder = require("../src/adder.js")();
-var multiplier = require("../src/multiplier.js")();
+var adder = require("./adder.js")();
+var multiplier = require("./multiplier.js")();
 
 var helloMessage = React.createClass({
   render: function() {
