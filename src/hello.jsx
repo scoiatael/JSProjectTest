@@ -5,12 +5,16 @@ var React = require("react");
 var mountNode = document.getElementById('hello');
 var adder = require("./adder.js")();
 var multiplier = require("./multiplier.js")();
+var coffeeAdder = require("./coffeeAdder.js")();
 
 var helloMessage = React.createClass({
   render: function() {
     var x = 2;
     var y = 6;
-    return <div>Hello {this.props.name}<br/> {x} + {y} is {adder.add(x,y)} <br/> {x} * {y} is {multiplier.mult(x,y)}</div>;
+    return <div>Hello {this.props.name}<br/> 
+      {x} + {y} is {adder.add(x,y)} <br/> 
+      {x} * {y} is {multiplier.mult(x,y)}<br/>
+      {x} - {x} is {coffeeAdder.minus(x,y)}</div>;
   }
 });
 

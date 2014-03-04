@@ -21,7 +21,7 @@ module.exports = function(grunt) {
       },
       common:      ['gruntfile.js', 'lib/**/*.js', 'test/**/*.js'],
       tmp:         ['tmp/**/*.js'],
-      beforebuild: ['src/**/*.js', 'spec/**/*.js']
+      beforebuild: ['src/**/*.js', 'spec/*.js']
     },
     react: {
       files: {
@@ -49,8 +49,8 @@ module.exports = function(grunt) {
       src: {
         src: ['tmp/**/*.js'],
         options: {
-          specs: 'spec/*Spec.js',
-          helpers: 'spec/*Helper.js'
+          specs: 'spec/**/*Spec.js',
+          helpers: 'spec/**/*Helper.js'
         }
       }
     },
@@ -81,7 +81,7 @@ module.exports = function(grunt) {
         flatten: true,
         cwd: 'spec',
         src: ['*.coffee'],
-        dest: 'spec',
+        dest: 'spec/coffee/',
         ext: '.js'
       }
     }
@@ -98,6 +98,6 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-coffee');
 
   // Default task(s).
-  grunt.registerTask('default', ['jshint:common', 'jshint:beforebuild', 'react', 'symlink', 'jasmine', 'jshint:tmp', 'browserify', 'uglify']);
+  grunt.registerTask('default', ['jshint:common', 'jshint:beforebuild', 'react', 'symlink', 'coffee', 'jasmine', 'browserify', 'uglify']);
 
 };

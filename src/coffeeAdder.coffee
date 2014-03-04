@@ -3,4 +3,4 @@ CoffeeAdder = class CoffeeAdder
   'minus' : (a,b) -> a-b 
 
 window.CoffeeAdder = CoffeeAdder
-module.exports = coffeeAdder 
+module.exports = CoffeeAdder 

@@ -1,10 +1,10 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /* jshint node:true*/
-var hello = require('./react/hello.js');
+var hello = require('./tmp/hello.js');
 
 hello.render();
 
-},{"./react/hello.js":133}],2:[function(require,module,exports){
+},{"./tmp/hello.js":135}],2:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -16799,25 +16799,6 @@ module.exports = warning;
 module.exports = require('./lib/React');
 
 },{"./lib/React":26}],133:[function(require,module,exports){
-/** @jsx React.DOM */
-/*global document*/
-"use strict";
-var React = require("react");
-var mountNode = document.getElementById('hello');
-var adder = require("../src/adder.js")();
-var multiplier = require("../src/multiplier.js")();
-
-var helloMessage = React.createClass({displayName: 'helloMessage',
-  render: function() {
-    var x = 2;
-    var y = 6;
-    return React.DOM.div(null, "Hello ", this.props.name,React.DOM.br(null), " ", x, " + ", y, " is ", adder.add(x,y), " ", React.DOM.br(null), " ", x, " * ", y, " is ", multiplier.mult(x,y));
-  }
-});
-
-module.exports = { 'render' : function() { React.renderComponent(helloMessage( {name:"John"} ), mountNode); } };
-
-},{"../src/adder.js":134,"../src/multiplier.js":135,"react":132}],134:[function(require,module,exports){
 /* jshint node:true */
 'use strict';
 
@@ -16830,7 +16811,55 @@ function createAdder() {
 
 module.exports = createAdder;
 
+},{}],134:[function(require,module,exports){
+(function() {
+  var CoffeeAdder;
+
+  CoffeeAdder = CoffeeAdder = (function() {
+    function CoffeeAdder() {}
+
+    CoffeeAdder.prototype['add'] = function(a, b) {
+      return a + b;
+    };
+
+    CoffeeAdder.prototype['minus'] = function(a, b) {
+      return a - b;
+    };
+
+    return CoffeeAdder;
+
+  })();
+
+  window.CoffeeAdder = CoffeeAdder;
+
+  module.exports = CoffeeAdder;
+
+}).call(this);
+
 },{}],135:[function(require,module,exports){
+/** @jsx React.DOM */
+/*global document*/
+"use strict";
+var React = require("react");
+var mountNode = document.getElementById('hello');
+var adder = require("./adder.js")();
+var multiplier = require("./multiplier.js")();
+var coffeeAdder = require("./coffeeAdder.js")();
+
+var helloMessage = React.createClass({displayName: 'helloMessage',
+  render: function() {
+    var x = 2;
+    var y = 6;
+    return React.DOM.div(null, "Hello ", this.props.name,React.DOM.br(null), 
+      x, " + ", y, " is ", adder.add(x,y), " ", React.DOM.br(null), 
+      x, " * ", y, " is ", multiplier.mult(x,y),React.DOM.br(null),
+      x, " - ", x, " is ", coffeeAdder.minus(x,y));
+  }
+});
+
+module.exports = { 'render' : function() { React.renderComponent(helloMessage( {name:"John"} ), mountNode); } };
+
+},{"./adder.js":133,"./coffeeAdder.js":134,"./multiplier.js":136,"react":132}],136:[function(require,module,exports){
 /* jshint node:true */
 "use strict";
 

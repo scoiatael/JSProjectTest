@@ -18,6 +18,6 @@
 
   window.CoffeeAdder = CoffeeAdder;
 
-  module.exports = coffeeAdder;
+  module.exports = CoffeeAdder;
 
 }).call(this);
