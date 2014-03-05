@@ -8,4 +8,8 @@ function createMultiplier () {
   return { 'mult':mult };
 }
 
-module.exports = createMultiplier;
+try {
+  module.exports = createMultiplier;
+} catch(err) {
+  //unable to require/export -> jasmine testing ;)
+}

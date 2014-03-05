@@ -1,11 +1,20 @@
 /** @jsx React.DOM */
 /*global document*/
 "use strict";
-var React = require("react");
 var mountNode = document.getElementById('hello');
-var adder = require("./adder.js")();
-var multiplier = require("./multiplier.js")();
-var coffeeAdder = require("./coffeeAdder.js")();
+var React       ;
+var adder       ;
+var multiplier  ;
+var coffeeAdder ;
+
+try {
+  React       = require("react");
+  adder       = require("./adder.js")();
+  multiplier  = require("./multiplier.js")();
+  coffeeAdder = require("./coffeeAdder.js")();
+} catch(err) {
+  //unable to require/export -> jasmine testing ;)
+}
 
 var helloMessage = React.createClass({
   render: function() {
@@ -14,7 +23,7 @@ var helloMessage = React.createClass({
     return <div>Hello {this.props.name}<br/> 
       {x} + {y} is {adder.add(x,y)} <br/> 
       {x} * {y} is {multiplier.mult(x,y)}<br/>
-      {x} - {x} is {coffeeAdder.minus(x,y)}</div>;
+      {x} - {y} is {coffeeAdder.minus(x,y)}</div>;
   }
 });
 

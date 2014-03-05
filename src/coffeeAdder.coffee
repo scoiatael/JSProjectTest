@@ -1,6 +1,7 @@
-CoffeeAdder = class CoffeeAdder 
+coffeeAdder = () ->
   'add' : (a,b) -> a+b
   'minus' : (a,b) -> a-b 
 
-window.CoffeeAdder = CoffeeAdder
-module.exports = CoffeeAdder 
+try
+  window.coffeeAdder = coffeeAdder
+  module.exports = coffeeAdder 

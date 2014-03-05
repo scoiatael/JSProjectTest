@@ -8,4 +8,8 @@ function createAdder() {
   return { 'add' : plus };
 }
 
-module.exports = createAdder;
+try {
+  module.exports = createAdder;
+} catch(err) {
+  //unable to export -> jasmine testing ;)
+}
