@@ -14,8 +14,17 @@ describe("adder", function (){
   });
 
   it("should add normally", function() {
-    for (var x in [1,2,3,4]) {
-      for (var y in [1,2,3,4]) {
+    function range (start, end, f) {
+      var t = [];
+      var fp = (f || (function(x) { return x+1; }));
+      for (var i = start; i<end; i=fp(i)) {
+        t = t + [i];
+      }
+      return t;
+    }
+    var inc = function(x) { x = x+4; };
+    for (var x in range(-10,10)) {
+      for (var y in range(-200,200, inc)) {
         var sum = adder.add(x,y);
         expect(sum).toEqual(x+y);
       }
