@@ -1,7 +1,8 @@
 /** @jsx React.DOM */
 /*global document*/
 "use strict";
-var mountNode = document.getElementById('hello');
+var helloNode = document.getElementById("hello");
+var tabNode = document.getElementById("tabber");
 var React       ;
 var adder       ;
 var multiplier  ;
@@ -27,4 +28,48 @@ var helloMessage = React.createClass({
   }
 });
 
-module.exports = { 'render' : function() { React.renderComponent(<helloMessage name="John" />, mountNode); } };
+var tabber = React.createClass({
+  getInitialState: function() {
+    return { clicked : 0 };
+  },
+  handleClick: function(i) {
+    console.log('clicked ' + this.props.items[i]);
+    this.setState({clicked : i});
+  },
+  styleButton: function(c,i) {
+    var ret = { width:30, color:'white', background:'black' } ;
+    if(c === i) {
+      ret.color = 'black';
+      ret.background = 'white';
+    }   
+    return ret;
+  },
+  render: function() {
+    return (
+      <div>
+        <div>
+        {
+          this.props.items.map(function(item, i) {
+            return (
+              <button style={this.styleButton(this.state.clicked, i)}
+                    onClick={this.handleClick.bind(this, i)} key={i}>
+              {item}
+              </button>
+              );
+          }, this) 
+        }
+        </div>
+        <div style={{height:300, width:300}}>
+        {this.props.items[this.state.clicked || 0]}
+        </div>
+      </div>
+      );
+  }
+});
+
+var tabExampleContent = ['a','b','c'];
+
+module.exports = { 
+  'render' : function() { 
+    React.renderComponent(<helloMessage name="John" />, helloNode);
+    React.renderComponent(<tabber items={tabExampleContent} />, tabNode); } };

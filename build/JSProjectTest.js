@@ -1,8 +1,8 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /* jshint node:true*/
-var hello = require('./tmp/hello.js');
+var rendering = require('./tmp/hello.js');
 
-hello.render();
+rendering.render(["a","b","c"]);
 
 },{"./tmp/hello.js":135}],2:[function(require,module,exports){
 // shim for using process in browser
@@ -16838,7 +16838,8 @@ try {
 /** @jsx React.DOM */
 /*global document*/
 "use strict";
-var mountNode = document.getElementById('hello');
+var helloNode = document.getElementById("hello");
+var tabNode = document.getElementById("tabber");
 var React       ;
 var adder       ;
 var multiplier  ;
@@ -16864,7 +16865,51 @@ var helloMessage = React.createClass({displayName: 'helloMessage',
   }
 });
 
-module.exports = { 'render' : function() { React.renderComponent(helloMessage( {name:"John"} ), mountNode); } };
+var tabber = React.createClass({displayName: 'tabber',
+  getInitialState: function() {
+    return { clicked : 0 };
+  },
+  handleClick: function(i) {
+    console.log('clicked ' + this.props.items[i]);
+    this.setState({clicked : i});
+  },
+  styleButton: function(c,i) {
+    var ret = { width:30, color:'white', background:'black' } ;
+    if(c === i) {
+      ret.color = 'black';
+      ret.background = 'white';
+    }   
+    return ret;
+  },
+  render: function() {
+    return (
+      React.DOM.div(null, 
+        React.DOM.div(null, 
+        
+          this.props.items.map(function(item, i) {
+            return (
+              React.DOM.button( {style:this.styleButton(this.state.clicked, i),
+                    onClick:this.handleClick.bind(this, i), key:i}, 
+              item
+              )
+              );
+          }, this) 
+        
+        ),
+        React.DOM.div( {style:{height:300, width:300}}, 
+        this.props.items[this.state.clicked || 0]
+        )
+      )
+      );
+  }
+});
+
+var tabExampleContent = ['a','b','c'];
+
+module.exports = { 
+  'render' : function() { 
+    React.renderComponent(helloMessage( {name:"John"} ), helloNode);
+    React.renderComponent(tabber( {items:tabExampleContent} ), tabNode); } };
 
 },{"./adder.js":133,"./coffeeAdder.js":134,"./multiplier.js":136,"react":132}],136:[function(require,module,exports){
 /* jshint node:true */

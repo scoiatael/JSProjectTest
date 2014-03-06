@@ -1,4 +1,4 @@
 /* jshint node:true*/
-var hello = require('./tmp/hello.js');
+var rendering = require('./tmp/hello.js');
 
-hello.render();
+rendering.render(["a","b","c"]);
