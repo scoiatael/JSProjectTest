@@ -21,10 +21,12 @@ var helloMessage = React.createClass({
   render: function() {
     var x = 2;
     var y = 6;
-    return <div>Hello {this.props.name}<br/> 
+    return <div style={{width:300, border:'1px solid black', background:'grey', position:'float'}} >
+      Hello {this.props.name}<br/> 
       {x} + {y} is {adder.add(x,y)} <br/> 
       {x} * {y} is {multiplier.mult(x,y)}<br/>
-      {x} - {y} is {coffeeAdder.minus(x,y)}</div>;
+      {x} - {y} is {coffeeAdder.minus(x,y)}
+      </div>;
   }
 });
 
@@ -37,7 +39,7 @@ var tabber = React.createClass({
     this.setState({clicked : i});
   },
   styleButton: function(c,i) {
-    var ret = { width:30, color:'white', background:'black' } ;
+    var ret = { width:30, color:'white', background:'black'} ;
     if(c === i) {
       ret.color = 'black';
       ret.background = 'white';
@@ -46,7 +48,7 @@ var tabber = React.createClass({
   },
   render: function() {
     return (
-      <div>
+      <div style={{position:'float', width:'100', marginLeft:'auto', marginRight:'auto'}}>
         <div>
         {
           this.props.items.map(function(item, i) {
@@ -59,7 +61,7 @@ var tabber = React.createClass({
           }, this) 
         }
         </div>
-        <div style={{height:300, width:300}}>
+        <div style={{height:300, width:300, scale:4}}>
         {this.props.items[this.state.clicked || 0]}
         </div>
       </div>

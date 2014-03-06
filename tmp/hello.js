@@ -21,10 +21,12 @@ var helloMessage = React.createClass({displayName: 'helloMessage',
   render: function() {
     var x = 2;
     var y = 6;
-    return React.DOM.div(null, "Hello ", this.props.name,React.DOM.br(null), 
+    return React.DOM.div( {style:{width:300, border:'1px solid black', background:'grey', position:'float'}} , 
+      "Hello ", this.props.name,React.DOM.br(null), 
       x, " + ", y, " is ", adder.add(x,y), " ", React.DOM.br(null), 
       x, " * ", y, " is ", multiplier.mult(x,y),React.DOM.br(null),
-      x, " - ", y, " is ", coffeeAdder.minus(x,y));
+      x, " - ", y, " is ", coffeeAdder.minus(x,y)
+      );
   }
 });
 
@@ -37,7 +39,7 @@ var tabber = React.createClass({displayName: 'tabber',
     this.setState({clicked : i});
   },
   styleButton: function(c,i) {
-    var ret = { width:30, color:'white', background:'black' } ;
+    var ret = { width:30, color:'white', background:'black'} ;
     if(c === i) {
       ret.color = 'black';
       ret.background = 'white';
@@ -46,7 +48,7 @@ var tabber = React.createClass({displayName: 'tabber',
   },
   render: function() {
     return (
-      React.DOM.div(null, 
+      React.DOM.div( {style:{position:'float', width:'100', marginLeft:'auto', marginRight:'auto'}}, 
         React.DOM.div(null, 
         
           this.props.items.map(function(item, i) {
@@ -59,7 +61,7 @@ var tabber = React.createClass({displayName: 'tabber',
           }, this) 
         
         ),
-        React.DOM.div( {style:{height:300, width:300}}, 
+        React.DOM.div( {style:{height:300, width:300, scale:4}}, 
         this.props.items[this.state.clicked || 0]
         )
       )
