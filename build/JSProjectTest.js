@@ -20717,6 +20717,11 @@ module.exports = require('./lib/React');
 }).call(this);
 
 },{}],135:[function(require,module,exports){
+/**
+ * client.js
+ * Łukasz Czapliński, ii.uni.wroc.pl
+ * 13-03-2014
+ * */
 var Peerjs;
 var Keys;
 var _;
@@ -20747,9 +20752,9 @@ try {
  * * connect              - connects to id                  - function (id)
  * * send                 - sends sth to id                 - function (id, sth)
  * * close                - closes connection               - function (id)
- * * get_list             - returns list of ids             - function ()
+ * * get_list             - returns list of ids             - function () -> [String]
  * * destroy              - destroys client                 - function ()
- * * get_id               - returns self id                 - function ()
+ * * get_id               - returns self id                 - function () -> String
  * */
 function makeClient (obj) {
   /**
@@ -20853,11 +20858,11 @@ function makeClient (obj) {
 
   return { 
     connect : connectTo, 
-            send : sendTo, 
-            close : closeConnection, 
-            get_list : function () { return _.keys(connections); },
-            destroy : exitGracefully,
-            get_id : function () { return myId; }
+    send : sendTo, 
+    close : closeConnection, 
+    get_list : function () { return _.keys(connections); },
+    destroy : exitGracefully,
+    get_id : function () { return myId; }
 
   };
 
@@ -20866,6 +20871,11 @@ function makeClient (obj) {
 module.exports = makeClient;
 
 },{"../node_modules/peerjs/dist/peer.js":3,"./keys.js":137,"underscore":134}],136:[function(require,module,exports){
+/**
+ * clientWrapper.js
+ * Łukasz Czapliński, ii.uni.wroc.pl
+ * 13-03-2014
+ * */
 var _;
 var makeClient;
 
@@ -20894,7 +20904,7 @@ function makeClientConnection(obj) {
   var client = makeClient(obj);
   function bindCommandFunction (command, id, fn) {
     if(_.first(command) === id) {
-      fn(_.rest(command));
+      return fn(_.rest(command));
     }
   }
 
@@ -20914,14 +20924,24 @@ function makeClientConnection(obj) {
 module.exports = makeClientConnection;
 
 },{"./client.js":135,"underscore":134}],137:[function(require,module,exports){
+/**
+ * keys.js
+ * Łukasz Czapliński, ii.uni.wroc.pl
+ * 13-03-2014
+ * */
 var apiKeys = {
   peerjs : '8a2sthu7mc7eqaor'
 };
 
-module.exports(apiKeys);
+module.exports = apiKeys;
 
 },{}],138:[function(require,module,exports){
 /** @jsx React.DOM */
+/**
+ * main.jsx
+ * Łukasz Czapliński, ii.uni.wroc.pl
+ * 13-03-2014
+ * */
 var makeClientConnection;
 var opts = {};
 var React;
@@ -20937,61 +20957,78 @@ try {
    * */
 }
 
-var messages = React.createClass({displayName: 'messages',
+var messageDisplay = React.createClass({displayName: 'messageDisplay',
   render : function () {
     return (
       React.DOM.div( {id:"messages"}, 
        
-        _.map(this.props.messages, function(val) {
-          return (React.DOM.div( {className:"message"}, val));
+        _.map(this.props.messages, function(val, k) {
+          return (React.DOM.div( {className:"message", key:k}, val));
         })
       
       ))
   }
 });
 
-var execute = React.createClass({displayName: 'execute',
+var executionForm = React.createClass({displayName: 'executionForm',
   handleSubmit : function() {
-    var txt = this.ref.text.getDOMNode().value.trim();
+    var txt = this.refs.text.getDOMNode().value.trim();
     if(!txt) {
       return false;
     }
     this.props.execute(txt);
-    this.ref.text.getDOMNode().value = '';
+    this.refs.text.getDOMNode().value = '';
     return false;
   },
   render : function () {
     return (
-      React.DOM.form( {id:"execute", onSubmit:this.handleSubmit}, 
-      React.DOM.input( {type:"text", placeholder:"command..", ref:"text"}),
-      React.DOM.input( {type:"OK", value:"Post"})
+      React.DOM.form( {id:"execute-form", onSubmit:this.handleSubmit}, 
+      React.DOM.input( {type:"submit", value:"Post"}),
+      React.DOM.input( {type:"text", placeholder:"command..", ref:"text"})
       ));
   }
 });
 
-var main = React.createClass({displayName: 'main',
-  execute : function () {
+var connectionManager = React.createClass({displayName: 'connectionManager',
+  execute : function (text) {
+    this.setState({ messages : [text]});
    },
   render : function () {
     return (
       React.DOM.div( {id:  "main"}, 
-        React.DOM.div(null,  " ", React.DOM.h2(null, "Messages")),
-        messages( {messages:this.state.messages} ),
-        execute( {execute: this.execute} )
+        React.DOM.div(null, React.DOM.h2(null, "Messages")),
+        messageDisplay( {messages:this.state.messages} ),
+        executionForm( {execute: this.execute} )
       )
       );
   },
   getInitialState : function () {
     return { messages : []};
   },
-  componentDidMount : function () {
-    console.log('connecting to client..');
+  componentWillMount : function () {
 //    this.setState({ connection : makeClientConnection(opts) });
+  },
+  componentWillUnmount : function () {
+    if(typeof this.state.connection !== 'undefined') {
+      this.state.connection.execute('destroy');
+    }
+  }
+
+});
+
+var helloX = React.createClass({displayName: 'helloX',
+  render : function() {
+    return (
+      React.DOM.div( {id:"hello-x"}, 
+      React.DOM.h2(null, "Hello ", this.props.name,"!")
+      ));
   }
 });
 
-var node = document.getElementById('content');
+
 module.exports = function () { 
-  React.renderComponent(React.DOM.main(null ), node); }
+  React.renderComponent(connectionManager(null ), document.getElementById('js-content'));
+  //React.renderComponent(< helloX name='World' />, document.getElementById('js-content'));
+};
 
 },{"./clientWrapper.js":136,"react":133,"underscore":134}]},{},[1])

@@ -1,3 +1,8 @@
+/**
+ * client.js
+ * Łukasz Czapliński, ii.uni.wroc.pl
+ * 13-03-2014
+ * */
 var Peerjs;
 var Keys;
 var _;
@@ -28,9 +33,9 @@ try {
  * * connect              - connects to id                  - function (id)
  * * send                 - sends sth to id                 - function (id, sth)
  * * close                - closes connection               - function (id)
- * * get_list             - returns list of ids             - function ()
+ * * get_list             - returns list of ids             - function () -> [String]
  * * destroy              - destroys client                 - function ()
- * * get_id               - returns self id                 - function ()
+ * * get_id               - returns self id                 - function () -> String
  * */
 function makeClient (obj) {
   /**
@@ -134,11 +139,11 @@ function makeClient (obj) {
 
   return { 
     connect : connectTo, 
-            send : sendTo, 
-            close : closeConnection, 
-            get_list : function () { return _.keys(connections); },
-            destroy : exitGracefully,
-            get_id : function () { return myId; }
+    send : sendTo, 
+    close : closeConnection, 
+    get_list : function () { return _.keys(connections); },
+    destroy : exitGracefully,
+    get_id : function () { return myId; }
 
   };
 

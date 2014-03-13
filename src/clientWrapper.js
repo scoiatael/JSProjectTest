@@ -1,3 +1,8 @@
+/**
+ * clientWrapper.js
+ * Łukasz Czapliński, ii.uni.wroc.pl
+ * 13-03-2014
+ * */
 var _;
 var makeClient;
 
@@ -26,7 +31,7 @@ function makeClientConnection(obj) {
   var client = makeClient(obj);
   function bindCommandFunction (command, id, fn) {
     if(_.first(command) === id) {
-      fn(_.rest(command));
+      return fn(_.rest(command));
     }
   }
 

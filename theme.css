@@ -1,26 +1,6 @@
-.tabber-div {
-  width:100px;
-  margin-left:auto;
-  margin-right:auto
+#messages {
+  width:600px;
+  height:100px;
+  background:#DDD;
 }
-.hello-main {
-  width:300px; 
-  border:1px solid black; 
-  background:#333; 
-}
-.tabber-items {
-  height:300px; 
-  width:300px;
-}
-.tabber-tab {
-  width:50px;
-  height:20px;
-}
-.tabber-tab[data-active="0"] {
-  color:#EEE;
-  background:#333;
-}
-.tabber-tab[data-active="1"] {
-  color:#000;
-  background:#EEE;
-}
+
