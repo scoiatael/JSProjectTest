@@ -71,7 +71,7 @@ var connectionManager = React.createClass({
   },
   execute : function (text) {
     var return_text = this.state.connection.execute(text);
-    this.newMessage(': ' + text + '->' + return_text); 
+    this.newMessage(': ' + text + ' -> ' + return_text); 
    },
   handleData : function (id, text) {
     this.newMessage(id + ' : ' + text);
