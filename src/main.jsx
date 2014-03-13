@@ -44,9 +44,9 @@ var executionForm = React.createClass({
   },
   render : function () {
     return (
-      <form id='execute-form' onSubmit={this.handleSubmit}>
-      <input type='submit' value='Post'/>
-      <input type='text' placeholder='command..' ref='text'/>
+      <form id='execute-form' onSubmit={this.handleSubmit} >
+      <input type='submit' value='Post' id='post-button'/>
+      <input type='text' placeholder='command..' ref='text' id='post-text'/>
       </form>);
   }
 });

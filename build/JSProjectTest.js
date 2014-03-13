@@ -20982,9 +20982,9 @@ var executionForm = React.createClass({displayName: 'executionForm',
   },
   render : function () {
     return (
-      React.DOM.form( {id:"execute-form", onSubmit:this.handleSubmit}, 
-      React.DOM.input( {type:"submit", value:"Post"}),
-      React.DOM.input( {type:"text", placeholder:"command..", ref:"text"})
+      React.DOM.form( {id:"execute-form", onSubmit:this.handleSubmit} , 
+      React.DOM.input( {type:"submit", value:"Post", id:"post-button"}),
+      React.DOM.input( {type:"text", placeholder:"command..", ref:"text", id:"post-text"})
       ));
   }
 });
