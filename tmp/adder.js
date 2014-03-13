@@ -1,1 +1,1 @@
-../src/adder.js
+src/examples/adder.js

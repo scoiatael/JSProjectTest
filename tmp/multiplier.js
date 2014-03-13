@@ -1,1 +1,1 @@
-../src/multiplier.js
+src/examples/multiplier.js

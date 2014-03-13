@@ -62,7 +62,7 @@ module.exports = function(grunt) {
         files: [ {
           expand:true,
           cwd: 'src',
-          src: ['*.js'],
+          src: ['**/*.js'],
           dest: 'tmp/'
           } ]
       }
@@ -101,6 +101,6 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-coffee');
 
   // Default task(s).
-  grunt.registerTask('default', ['jshint:common', 'jshint:beforebuild', 'react', 'symlink', 'coffee', 'jasmine', 'browserify', 'uglify']);
+  grunt.registerTask('default', ['jshint:common', 'jshint:beforebuild', 'react', 'symlink', 'coffee', 'browserify', 'uglify']);
 
 };
