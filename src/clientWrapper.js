@@ -13,6 +13,7 @@ try {
   /**
    * sth
    **/ 
+  console.error(err);
 }
 
 /**
@@ -31,21 +32,25 @@ function makeClientConnection(obj) {
   var client = makeClient(obj);
   function bindCommandFunction (command, id, fn) {
     if(_.first(command) === id) {
-      return fn(_.rest(command));
+      return fn(_.rest(command).join(' '));
     }
   }
 
-  function execute (command) {
+  function execute (string_command) {
+    var command = string_command.split(' ');
     var ret = null;
-    ret = ret || bindCommandFunction(command, 'sendto', function(c) { 
-      client.send(_.first(c), _.rest(c)); });
+    ret = ret || bindCommandFunction(command, 'sendto', function(com) { 
+      var c = com.split(' ');
+      client.send(_.first(c), _.rest(c).join(' ')); });
     ret = ret||bindCommandFunction(command, 'connecto', client.connect);
     ret = ret||bindCommandFunction(command, 'list', client.get_list);
     ret = ret||bindCommandFunction(command, 'destroy', client.destroy);
     ret = ret||bindCommandFunction(command, 'closec', client.close);
     ret = ret||bindCommandFunction(command, 'id', client.get_id);
+    console.log('Answer to ' + command + ' : ' + ret);
+    return ret;
   }
-  return execute;
+  return {execute : execute};
 }
 
 module.exports = makeClientConnection;

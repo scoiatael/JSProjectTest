@@ -15,7 +15,6 @@
     "grunt-contrib-jasmine": "^0.6.1",
     "grunt-contrib-symlink": "~0.3.0",
     "grunt-contrib-coffee": "~0.10.1",
-    "peerjs": "^0.3.6",
     "underscore": "^1.6.0"
   }
 }

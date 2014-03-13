@@ -3,18 +3,15 @@
  * Łukasz Czapliński, ii.uni.wroc.pl
  * 13-03-2014
  * */
-var Peerjs;
+/*global Peer*/
 var Keys;
 var _;
 
 try {
   Keys = require('./keys.js');
-  Peerjs = require('../node_modules/peerjs/dist/peer.js');
   _ = require('underscore'); 
 } catch(err) {
-  /**
-   * sth
-   **/ 
+  console.error(err);
 }
 
 /**
@@ -50,9 +47,9 @@ function makeClient (obj) {
       _.each(obj.options, function(v,k,l) { opts[k] = v; });
     }
     if(_.has(obj, 'id')) { 
-      ret = new Peerjs.Peer(obj.id, opts);
+      ret = new Peer(obj.id, opts);
     } else { 
-      ret = new Peerjs.Peer(opts);
+      ret = new Peer(opts);
     } 
     return ret;
   } ());
@@ -67,15 +64,16 @@ function makeClient (obj) {
   var exitGracefully;
   var sanityCheck;
 
-  sanityCheck = function() {
-    if(peer.destroyed) {
-      console.log('trying to use peer after destruction');
-    }
-  };
   forwardError =  function(err) {
-    console.log(err);
     if(_.has(obj, 'error_handler')) {
       obj.error_handler(err);
+    } else {
+      console.log(err);
+    }
+  };
+  sanityCheck = function() {
+    if(peer.destroyed) { 
+      forwardError(new Error('Peer destroyed'));
     }
   };
   closeConnection =  function(id) {
@@ -83,7 +81,7 @@ function makeClient (obj) {
       connections[id].close();
       delete connections[id];
     } else {
-      console.log('tried to close nonexistant connection with id: ' + id.toString());
+      forwardError(new Error('Nonexistant connection ' + id));
     }
   };
   addConnection =  function(conn) {
@@ -91,7 +89,7 @@ function makeClient (obj) {
       /**
        * bad things happened
        * */
-      console.log('unexpected happened');
+      forwardError(new Error('Unexpected happened'));
     }
     conn.on('open', function () {
       connections[conn.peer] = conn;
@@ -110,7 +108,7 @@ function makeClient (obj) {
       connections[id].send(what);
       done = true;
     } else {
-      console.log('tried to send to nonexistant connection with id: ' + id.toString());
+      forwardError(new Error('Nonexistant connection ' + id));
       done = false;
     }
     return done;

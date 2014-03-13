@@ -17,18 +17,30 @@ try {
   /**
    * sth
    * */
+  console.error(err);
 }
 
 var messageDisplay = React.createClass({displayName: 'messageDisplay',
   render : function () {
     return (
-      React.DOM.div( {id:"messages"}, 
+      React.DOM.div( {id:this.props.name}, 
        
         _.map(this.props.messages, function(val, k) {
           return (React.DOM.div( {className:"message", key:k}, val));
         })
       
       ))
+  },
+  componentWillUpdate: function() {
+    var node = this.getDOMNode();
+    this.shouldScrollBottom = node.scrollTop + node.offsetHeight === node.scrollHeight;
+  },
+   
+  componentDidUpdate: function() {
+    if (this.shouldScrollBottom) {
+      var node = this.getDOMNode();
+      node.scrollTop = node.scrollHeight
+    }
   }
 });
 
@@ -52,28 +64,54 @@ var executionForm = React.createClass({displayName: 'executionForm',
 });
 
 var connectionManager = React.createClass({displayName: 'connectionManager',
+  newMessage : function (text) {
+    var newMessages = _.last(this.state.messages,50);
+    newMessages.push(text);
+    this.setState({ messages : newMessages});
+  },
   execute : function (text) {
-    this.setState({ messages : [text]});
+    var return_text = this.state.connection.execute(text);
+    this.newMessage(': ' + text + '->' + return_text); 
    },
+  handleData : function (id, text) {
+    this.newMessage(id + ' : ' + text);
+  },
+  handleError : function (err) {
+    var nerrors = this.state.errors;
+    nerrors.push('(' + err.name + ') ' + err.message)
+    this.setState({ errors : nerrors  });
+  },
   render : function () {
     return (
       React.DOM.div( {id:  "main"}, 
         React.DOM.div(null, React.DOM.h2(null, "Messages")),
-        messageDisplay( {messages:this.state.messages} ),
-        executionForm( {execute: this.execute} )
+        React.DOM.div(null, 
+          React.DOM.div( {id:"message-box"}, 
+            messageDisplay( {messages:this.state.messages, name:"messages"}),
+            executionForm( {execute: this.execute} )
+          ),
+          messageDisplay( {messages:this.state.errors, name:"errors"} )
+        )
       )
       );
   },
   getInitialState : function () {
-    return { messages : []};
+    return { 
+      messages : new Array(),
+      errors : new Array()
+    };
   },
   componentWillMount : function () {
-//    this.setState({ connection : makeClientConnection(opts) });
+    this.setState({ 
+      connection : makeClientConnection(_.extend(opts, {
+        error_handler : this.handleError,
+        on_data : this.handleData,
+        on_connection : _.bind(function(id) { this.newMessage('New connection from ' + id); }, this),
+        on_close : _.bind(function(id) { this.newMessage(id + ' left'); }, this)
+    })) });
   },
   componentWillUnmount : function () {
-    if(typeof this.state.connection !== 'undefined') {
-      this.state.connection.execute('destroy');
-    }
+    this.state.connection.execute('destroy');
   }
 
 });

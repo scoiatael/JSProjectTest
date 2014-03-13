@@ -1,7 +1,23 @@
 #messages {
   width:600px;
-  height:100px;
+  height:200px;
   background:#DDD;
+  overflow:scroll;
+}
+
+#errors {
+  width:200px;
+  height:200px;
+  background:#DDD;
+  overflow:scroll;
+}
+
+#error-box {
+  float:left;
+}
+
+#message-box {
+  float:left;
 }
 
 #post-button {
