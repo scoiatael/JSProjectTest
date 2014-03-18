@@ -1,7 +1,7 @@
 {
-  "name": "JSProjectTest",
+  "name": "PeerDemonium",
   "version": "0.1.0",
-  "repository": "www.github.com/scoiatael/JSProjectTest",
+  "repository": "www.github.com/scoiatael/PeerDemonium",
   "devDependencies": {
     "grunt": "^0.4.2",
     "grunt-contrib-jshint": "^0.8.0",
