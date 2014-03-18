@@ -1,5 +1,5 @@
 
-##P2P Chat with PeerJS and ReactJS
+##P2P Chat with PeerJS and React
 
 available at http://scoiatael.github.io/PeerDemonium
 
