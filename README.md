@@ -1,5 +1,7 @@
-P2P Chat with PeerJS and ReactJS
-availible at http://scoiatael.github.io/PeerDemonium
+
+##P2P Chat with PeerJS and ReactJS
+
+available at http://scoiatael.github.io/PeerDemonium
 
 1. install npm
 2. npm install -g grunt (if you don't have)
