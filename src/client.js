@@ -22,7 +22,9 @@ try {
  * * error_handler        - function to forward errors to   - function (err) 
  * * id                   - custom id                       - String
  * * options              - options to pass to Peer creator - Object
+ * * on_create            - Peer working                    - function (id)
  * * on_connection        - incoming connection             - function (id) 
+ * * on_open              - connection opened               - function (id)
  * * on_data              - process received data           - function (who, what) 
  * * on_close             - when someone closes connection  - function (id)
  *
@@ -73,7 +75,7 @@ function makeClient (obj) {
   };
   sanityCheck = function() {
     if(peer.destroyed) { 
-      forwardError(new Error('Peer destroyed'));
+      forwardError(new Error('Peer already destroyed'));
     }
   };
   closeConnection =  function(id) {
@@ -93,6 +95,9 @@ function makeClient (obj) {
     }
     conn.on('open', function () {
       connections[conn.peer] = conn;
+      if(_.has(obj, 'on_open')){
+        obj.on_open(conn.peer);
+      }
     });
     conn.on('close', closeConnection);
     conn.on('error', forwardError);
@@ -131,7 +136,13 @@ function makeClient (obj) {
     peer.destroy();
   };
 
-  peer.on('open', function(i) { opened = true; myId = i; } );
+  peer.on('open', function(i) { 
+    opened = true; 
+    myId = i; 
+    if(_.has(obj, 'on_create')){
+      obj.on_create();
+    }
+  } );
   peer.on('error', forwardError);
   peer.on('connection', addConnection);
 

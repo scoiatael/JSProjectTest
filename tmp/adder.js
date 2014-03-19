@@ -1,1 +1,0 @@
-src/examples/adder.js

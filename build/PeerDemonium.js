@@ -4,7 +4,7 @@ var rendering = require('./tmp/main.js');
 
 rendering();
 
-},{"./tmp/main.js":137}],2:[function(require,module,exports){
+},{"./tmp/main.js":139}],2:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -18168,7 +18168,9 @@ try {
  * * error_handler        - function to forward errors to   - function (err) 
  * * id                   - custom id                       - String
  * * options              - options to pass to Peer creator - Object
+ * * on_create            - Peer working                    - function (id)
  * * on_connection        - incoming connection             - function (id) 
+ * * on_open              - connection opened               - function (id)
  * * on_data              - process received data           - function (who, what) 
  * * on_close             - when someone closes connection  - function (id)
  *
@@ -18219,7 +18221,7 @@ function makeClient (obj) {
   };
   sanityCheck = function() {
     if(peer.destroyed) { 
-      forwardError(new Error('Peer destroyed'));
+      forwardError(new Error('Peer already destroyed'));
     }
   };
   closeConnection =  function(id) {
@@ -18239,6 +18241,9 @@ function makeClient (obj) {
     }
     conn.on('open', function () {
       connections[conn.peer] = conn;
+      if(_.has(obj, 'on_open')){
+        obj.on_open(conn.peer);
+      }
     });
     conn.on('close', closeConnection);
     conn.on('error', forwardError);
@@ -18277,7 +18282,13 @@ function makeClient (obj) {
     peer.destroy();
   };
 
-  peer.on('open', function(i) { opened = true; myId = i; } );
+  peer.on('open', function(i) { 
+    opened = true; 
+    myId = i; 
+    if(_.has(obj, 'on_create')){
+      obj.on_create();
+    }
+  } );
   peer.on('error', forwardError);
   peer.on('connection', addConnection);
 
@@ -18295,7 +18306,50 @@ function makeClient (obj) {
 
 module.exports = makeClient;
 
-},{"./keys.js":136,"underscore":133}],135:[function(require,module,exports){
+},{"./keys.js":138,"underscore":133}],135:[function(require,module,exports){
+/**
+ * clientWrapper.js
+ * Łukasz Czapliński, ii.uni.wroc.pl
+ * 19-03-2014
+ * */
+
+var client;
+var _;
+var common;
+
+try {
+  client = require('./client.js');
+  common = require('./common.js');
+  _ = require('underscore');
+} catch(err) {
+  console.log('(' + err.name + ')' + err.message);
+}
+
+
+function clientExtend (obj) {
+  common.check_for_properties(obj, ['base_opts', 'extension_list']);
+  var opt = obj.base_opts;
+  var list = obj.extension_list;
+  return (function extend() {
+    var fs = [];
+    var opts = _.reduce(list, function (memo, item) {
+      if(typeof item !== 'function') {
+        common.log_error(new Error("bad item on extension list"));
+      }
+      var r = item(memo);
+      common.check_for_properties(r, ['extension', 'opt']);
+      fs.push(r.extension);
+      return r.opt;
+    }, opt);
+    return _.reduce(fs, function (memo, item) {
+      return item(memo); 
+    }, client(opts)); 
+  }());
+}
+
+module.exports = clientExtend;
+
+},{"./client.js":134,"./common.js":137,"underscore":133}],136:[function(require,module,exports){
 /**
  * clientWrapper.js
  * Łukasz Czapliński, ii.uni.wroc.pl
@@ -18305,7 +18359,6 @@ var _;
 var makeClient;
 
 try {
-  makeClient = require('./client.js');
   _ = require('underscore'); 
 } catch(err) {
   /**
@@ -18318,7 +18371,7 @@ try {
  * creates wrapper around client
  * expectes argument identical to that of makeClient from client.js
  * returns function which executes string given as argument
- * availible command:
+ * available commands:
  * * sendto
  * * connecto
  * * list
@@ -18327,33 +18380,86 @@ try {
  * * id
  * */
 function makeClientConnection(obj) {
-  var client = makeClient(obj);
-  function bindCommandFunction (command, id, fn) {
-    if(_.first(command) === id) {
-      return fn(_.rest(command).join(' '));
-    }
-  }
+  return { 
+    opt : obj, 
+    extension : function (client) {
+      function bindCommandFunction (command, id, fn, prettify) {
+        if(_.first(command) === id) {
+//          console.log('Executing ' + command);
+          var r = fn(_.rest(command).join(' '));
+          if(typeof prettify === 'function') {
+            r = prettify(r);
+          }
+          return r;
+        }
+      }
 
-  function execute (string_command) {
-    var command = string_command.split(' ');
-    var ret = null;
-    ret = ret || bindCommandFunction(command, 'sendto', function(com) { 
-      var c = com.split(' ');
-      client.send(_.first(c), _.rest(c).join(' ')); });
-    ret = ret||bindCommandFunction(command, 'connecto', client.connect);
-    ret = ret||bindCommandFunction(command, 'list', client.get_list);
-    ret = ret||bindCommandFunction(command, 'destroy', client.destroy);
-    ret = ret||bindCommandFunction(command, 'closec', client.close);
-    ret = ret||bindCommandFunction(command, 'id', client.get_id);
-    console.log('Answer to ' + command + ' : ' + ret);
-    return ret;
-  }
-  return {execute : execute};
+      function constString(str) {
+        return function () { return str; };
+      }
+
+      function execute (string_command) {
+        var command = string_command.split(' ');
+        var ret = null;
+        ret = ret || bindCommandFunction(command, 'sendto', function(com) { 
+          var c = com.split(' ');
+          var receiver = _.first(c);
+          var message = _.rest(c).join(' ');
+          client.send(receiver, message);
+          return '-> ' + receiver + ' : ' + message; });
+        ret = ret || bindCommandFunction(command, 'connecto', client.connect, 
+            constString('connecting to ' + _.chain(command).rest().first().value()));
+        ret = ret || bindCommandFunction(command, 'list', client.get_list);
+        ret = ret || bindCommandFunction(command, 'destroy', client.destroy, constString("Bye!"));
+        ret = ret || bindCommandFunction(command, 'closec', client.close);
+        ret = ret || bindCommandFunction(command, 'id', client.get_id);
+        ret = ret || ('Unknown command: ' + string_command);
+        return ret;
+      }
+
+      function accVals () {
+        return [ 'sendto', 'connecto', 'list', 'destroy', 'closec', 'id' ];
+      }
+
+      return _.extend(client, {execute : execute, accepted_values : accVals});
+    }
+  };
 }
 
 module.exports = makeClientConnection;
 
-},{"./client.js":134,"underscore":133}],136:[function(require,module,exports){
+},{"underscore":133}],137:[function(require,module,exports){
+/**
+ * common.js
+ * Łukasz Czapliński, ii.uni.wroc.pl
+ * 19-03-2014
+ * */
+
+var _;
+
+try {
+  _ = require('underscore');
+} catch(err) {
+  console.error('(' + err.name + ')' + err.message);
+}
+
+function logError(err) {
+  console.error('(' + err.name + ')' + err.message);
+}
+
+function check(obj, list) {
+  return _.reduce(list, function (memo, item) {
+    var has_item = _.has(obj, item);
+    if(! has_item) {
+      logError(new Error(obj.toString() + ' lacks ' + item));
+    }
+    return memo && has_item;
+  }, true);
+}
+
+module.exports = { check_for_properties : check, log_error : logError };
+
+},{"underscore":133}],138:[function(require,module,exports){
 /**
  * keys.js
  * Łukasz Czapliński, ii.uni.wroc.pl
@@ -18365,7 +18471,7 @@ var apiKeys = {
 
 module.exports = apiKeys;
 
-},{}],137:[function(require,module,exports){
+},{}],139:[function(require,module,exports){
 /** @jsx React.DOM */
 /**
  * main.jsx
@@ -18380,12 +18486,13 @@ var _;
 try {
   _ = require('underscore');
   React = require('react');
-  makeClientConnection = require('./clientWrapper.js');
+  exec_ext = require('./client_wrappers/execute.js');
+  extend_client = require('./clientWrapper.js');
 } catch(err) {
   /**
    * sth
    * */
-  console.error(err);
+  console.error('(' + err.name + ')' + err.message);
 }
 
 var messageDisplay = React.createClass({displayName: 'messageDisplay',
@@ -18413,6 +18520,24 @@ var messageDisplay = React.createClass({displayName: 'messageDisplay',
 });
 
 var executionForm = React.createClass({displayName: 'executionForm',
+  handleKeyUp : _.debounce(function () {
+    var txt = this.refs.text.getDOMNode().value.trim().split(' ');
+    var sugg;
+    var matcher = function (i) {
+      console.log('suggestion ' + i + '?');
+      if(i.indexOf(_.head(txt)) === 0) {
+        sugg = i;
+        return true;
+      }
+      console.log('not');
+      return false;
+    };
+    if(_.size(txt) === 1) {
+      if(_.chain(this.props.suggestions).filter(matcher).size().value() === 1) {
+        this.refs.text.getDOMNode().value = sugg;
+      }
+    }
+  }, 100),
   handleSubmit : function() {
     var txt = this.refs.text.getDOMNode().value.trim();
     if(!txt) {
@@ -18439,7 +18564,7 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
   },
   execute : function (text) {
     var return_text = this.state.connection.execute(text);
-    this.newMessage(': ' + text + ' -> ' + return_text); 
+    this.newMessage(': ' + return_text); 
    },
   handleData : function (id, text) {
     this.newMessage(id + ' : ' + text);
@@ -18456,7 +18581,7 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
         React.DOM.div(null, 
           React.DOM.div( {id:"message-box"}, 
             messageDisplay( {messages:this.state.messages, name:"messages"}),
-            executionForm( {execute: this.execute} )
+            executionForm( {execute: this.execute, suggestions:this.state.connection.accepted_values} )
           ),
           messageDisplay( {messages:this.state.errors, name:"errors"} )
         )
@@ -18465,18 +18590,24 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
   },
   getInitialState : function () {
     return { 
-      messages : new Array(),
-      errors : new Array()
+      messages : [],
+      errors : []
     };
   },
   componentWillMount : function () {
     this.setState({ 
-      connection : makeClientConnection(_.extend(opts, {
-        error_handler : this.handleError,
-        on_data : this.handleData,
-        on_connection : _.bind(function(id) { this.newMessage('New connection from ' + id); }, this),
-        on_close : _.bind(function(id) { this.newMessage(id + ' left'); }, this)
-    })) });
+      connection : extend_client({
+        base_opts: _.extend(opts, {
+          error_handler : this.handleError,
+          on_data : this.handleData,
+          on_connection : _.bind(function(id) { this.newMessage('New connection from ' + id); }, this),
+          on_open : _.bind(function(id) { this.newMessage('Chat with ' + id + ' opened'); }, this),
+          on_create : _.bind(function(id) { this.newMessage('Connection opened'); }, this),
+          on_close : _.bind(function(id) { this.newMessage(id + ' left'); }, this)
+        }),
+        extension_list: [exec_ext]
+      })
+    });
   },
   componentWillUnmount : function () {
     this.state.connection.execute('destroy');
@@ -18499,4 +18630,4 @@ module.exports = function () {
   //React.renderComponent(< helloX name='World' />, document.getElementById('js-content'));
 };
 
-},{"./clientWrapper.js":135,"react":132,"underscore":133}]},{},[1])
+},{"./clientWrapper.js":135,"./client_wrappers/execute.js":136,"react":132,"underscore":133}]},{},[1])
