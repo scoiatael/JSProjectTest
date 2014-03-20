@@ -65,6 +65,7 @@ function makeClient (obj) {
   var connectTo;
   var exitGracefully;
   var sanityCheck;
+  var leaveMsg = '__leaving__';
 
   forwardError =  function(err) {
     if(_.has(obj, 'error_handler')) {
@@ -79,11 +80,15 @@ function makeClient (obj) {
     }
   };
   closeConnection =  function(id) {
+    if(typeof id === 'undefined') {
+      return;
+    }
+    console.log('closing connection..' + id);
     if(_.has(connections, id)) {
       connections[id].close();
       delete connections[id];
     } else {
-      forwardError(new Error('Nonexistant connection ' + id));
+      forwardError(new Error('cannot close nonexistant connection: ' + id));
     }
   };
   addConnection =  function(conn) {
@@ -113,7 +118,7 @@ function makeClient (obj) {
       connections[id].send(what);
       done = true;
     } else {
-      forwardError(new Error('Nonexistant connection ' + id));
+      forwardError(new Error('cannot send to nonexistant connection: ' + id));
       done = false;
     }
     return done;
@@ -124,6 +129,9 @@ function makeClient (obj) {
     } else {
       console.log('got ' + what.toString() + ' from ' + who.toString());
     }
+    if(what === leaveMsg) {
+      closeConnection(who);
+    }
   };
   connectTo = function (id) {
     sanityCheck();
@@ -131,8 +139,15 @@ function makeClient (obj) {
       label : 'chat'
     }));
   };
+
   exitGracefully = function () {
+    console.log('closing..');
     sanityCheck();
+    _.reduce(connections, function (memo, val, key) {
+      sendTo(key, leaveMsg);
+      closeConnection(key);
+      return null;
+    }, null);
     peer.destroy();
   };
 
@@ -143,6 +158,7 @@ function makeClient (obj) {
       obj.on_create();
     }
   } );
+
   peer.on('error', forwardError);
   peer.on('connection', addConnection);
 

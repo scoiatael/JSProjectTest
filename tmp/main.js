@@ -86,7 +86,9 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
   newMessage : function (text) {
     var newMessages = _.last(this.state.messages,50);
     newMessages.push(text);
-    this.setState({ messages : newMessages});
+    if(this.isMounted()) {
+      this.setState({ messages : newMessages});
+    }
   },
   execute : function (text) {
     var return_text = this.state.connection.execute(text);
@@ -98,12 +100,15 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
   handleError : function (err) {
     var nerrors = this.state.errors;
     nerrors.push('(' + err.name + ') ' + err.message)
-    this.setState({ errors : nerrors  });
+    if(this.isMounted()) { 
+      this.setState({ errors : nerrors  });
+    }
   },
   render : function () {
     return (
       React.DOM.div( {id:  "main"}, 
-        React.DOM.div(null, React.DOM.h2(null, "Messages")),
+        React.DOM.div(null, React.DOM.h2(null, "Messages")
+        ),
         React.DOM.div(null, 
           React.DOM.div( {id:"message-box"}, 
             messageDisplay( {messages:this.state.messages, name:"messages"}),
@@ -152,6 +157,10 @@ var helloX = React.createClass({displayName: 'helloX',
 
 
 module.exports = function () { 
-  React.renderComponent(connectionManager(null ), document.getElementById('js-content'));
-  //React.renderComponent(< helloX name='World' />, document.getElementById('js-content'));
+  function cleanup() {
+    React.unmountComponentAtNode(document.getElementById('js-content'));
+    return "are you sure?";
+  };
+  window.addEventListener('beforeunload', cleanup);
+  React.renderComponent(connectionManager( {event:cleanup}), document.getElementById('js-content'));
 };

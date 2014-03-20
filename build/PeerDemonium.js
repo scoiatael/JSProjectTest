@@ -18211,6 +18211,7 @@ function makeClient (obj) {
   var connectTo;
   var exitGracefully;
   var sanityCheck;
+  var leaveMsg = '__leaving__';
 
   forwardError =  function(err) {
     if(_.has(obj, 'error_handler')) {
@@ -18225,11 +18226,15 @@ function makeClient (obj) {
     }
   };
   closeConnection =  function(id) {
+    if(typeof id === 'undefined') {
+      return;
+    }
+    console.log('closing connection..' + id);
     if(_.has(connections, id)) {
       connections[id].close();
       delete connections[id];
     } else {
-      forwardError(new Error('Nonexistant connection ' + id));
+      forwardError(new Error('cannot close nonexistant connection: ' + id));
     }
   };
   addConnection =  function(conn) {
@@ -18259,7 +18264,7 @@ function makeClient (obj) {
       connections[id].send(what);
       done = true;
     } else {
-      forwardError(new Error('Nonexistant connection ' + id));
+      forwardError(new Error('cannot send to nonexistant connection: ' + id));
       done = false;
     }
     return done;
@@ -18270,6 +18275,9 @@ function makeClient (obj) {
     } else {
       console.log('got ' + what.toString() + ' from ' + who.toString());
     }
+    if(what === leaveMsg) {
+      closeConnection(who);
+    }
   };
   connectTo = function (id) {
     sanityCheck();
@@ -18277,8 +18285,15 @@ function makeClient (obj) {
       label : 'chat'
     }));
   };
+
   exitGracefully = function () {
+    console.log('closing..');
     sanityCheck();
+    _.reduce(connections, function (memo, val, key) {
+      sendTo(key, leaveMsg);
+      closeConnection(key);
+      return null;
+    }, null);
     peer.destroy();
   };
 
@@ -18289,6 +18304,7 @@ function makeClient (obj) {
       obj.on_create();
     }
   } );
+
   peer.on('error', forwardError);
   peer.on('connection', addConnection);
 
@@ -18560,7 +18576,9 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
   newMessage : function (text) {
     var newMessages = _.last(this.state.messages,50);
     newMessages.push(text);
-    this.setState({ messages : newMessages});
+    if(this.isMounted()) {
+      this.setState({ messages : newMessages});
+    }
   },
   execute : function (text) {
     var return_text = this.state.connection.execute(text);
@@ -18572,12 +18590,15 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
   handleError : function (err) {
     var nerrors = this.state.errors;
     nerrors.push('(' + err.name + ') ' + err.message)
-    this.setState({ errors : nerrors  });
+    if(this.isMounted()) { 
+      this.setState({ errors : nerrors  });
+    }
   },
   render : function () {
     return (
       React.DOM.div( {id:  "main"}, 
-        React.DOM.div(null, React.DOM.h2(null, "Messages")),
+        React.DOM.div(null, React.DOM.h2(null, "Messages")
+        ),
         React.DOM.div(null, 
           React.DOM.div( {id:"message-box"}, 
             messageDisplay( {messages:this.state.messages, name:"messages"}),
@@ -18626,8 +18647,12 @@ var helloX = React.createClass({displayName: 'helloX',
 
 
 module.exports = function () { 
-  React.renderComponent(connectionManager(null ), document.getElementById('js-content'));
-  //React.renderComponent(< helloX name='World' />, document.getElementById('js-content'));
+  function cleanup() {
+    React.unmountComponentAtNode(document.getElementById('js-content'));
+    return "are you sure?";
+  };
+  window.addEventListener('beforeunload', cleanup);
+  React.renderComponent(connectionManager( {event:cleanup}), document.getElementById('js-content'));
 };
 
 },{"./clientWrapper.js":135,"./client_wrappers/execute.js":136,"react":132,"underscore":133}]},{},[1])
