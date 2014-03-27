@@ -12,6 +12,9 @@ var _;
 var Message;
 var extend_client;
 var extensions = [];
+var tabber;
+var messageDisplay;
+var executionForm;
 
 try {
   _ = require('underscore');
@@ -22,95 +25,15 @@ try {
       function(name) {
         return require('./client_wrappers/' + name + '.js');
       });
+  tabber = require('./tabber.js');
+  messageDisplay = require('./messageDisplay.js');
+  executionForm = require('./executionForm.js');
 } catch(err) {
   /**
    * sth
    * */
   console.error('(' + err.name + ')' + err.message);
 }
-
-var tabber = React.createClass({
-  handleClick: function(i) {
-    console.log('clicked ' + this.props.items[i]);
-    this.props.handleClick(i);
-  },
-  buttonActive : function(c,i) {
-    var ret = '0';
-    if(c === i) {
-     ret = '1';
-    } 
-    return ret;
-  },
-  render: function() {
-    return (
-      <div id='tabber-div'>
-        {
-          this.props.items.map(function(item, i) {
-            return (
-              <button className='tabber-tab'
-                      data-active={this.buttonActive(this.state.clicked, i)}
-                      onClick={this.handleClick.bind(this, i)} key={i}>
-              {item}
-              </button>
-              );
-          }, this) 
-        }
-      </div>
-      );
-  }
-});
-
-
-var messageDisplay = React.createClass({
-  render : function () {
-    return (
-      <div id={this.props.name}>
-      { 
-        _.map(this.props.messages, function(val, k) {
-          return (<div className='message' key={k}>{val}</div>);
-        })
-      }
-      </div>)
-  },
-  componentWillUpdate: function() {
-    var node = this.getDOMNode();
-    this.shouldScrollBottom = node.scrollTop + node.offsetHeight === node.scrollHeight;
-  },
-   
-  componentDidUpdate: function() {
-    if (this.shouldScrollBottom) {
-      var node = this.getDOMNode();
-      node.scrollTop = node.scrollHeight
-    }
-  }
-});
-
-var executionForm = React.createClass({
-  onKeyUp : _.debounce(function () {
-    var txt = _.last(this.refs.text.getDOMNode().value.trim().split(' '));
-    var sugg;
-    sugg = this.props.getSuggestions(txt);
-    if( _.size(sugg) === 1) {
-      this.refs.text.getDOMNode().value = sugg;
-    }
-  }, 100),
-  handleSubmit : function() {
-    var txt = this.refs.text.getDOMNode().value.trim();
-    if(!txt) {
-      return false;
-    }
-    this.props.execute(txt);
-    this.refs.text.getDOMNode().value = '';
-    return false;
-  },
-  render : function () {
-    return (
-      <form id='execute-form' onSubmit={this.handleSubmit} >
-      <input type='submit' value='Post' id='post-button'/>
-      <input type='text' placeholder='command..' ref='text' id='post-text'/>
-      </form>);
-  }
-});
 
 var connectionManager = React.createClass({
   newMessage : function (text) {
@@ -137,9 +60,9 @@ var connectionManager = React.createClass({
     }
   },
   handleError : function (err) {
-    pushToErrors('(' + err.name + ') ' + err.message);
+    this.pushToErrors('(' + err.name + ') ' + err.message);
   },
-  activePeer : function() {
+  activePeer : function(i) {
     return this.state.connection.get_list()[i];
   },
   handleClick : function (i) {

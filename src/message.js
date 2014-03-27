@@ -13,4 +13,4 @@ function getMessage(d) {
   }
 }
 
-module.exports = { is_message : isMessage, get_message : get_message };
+module.exports = { is_message : isMessage, get_message : getMessage };
