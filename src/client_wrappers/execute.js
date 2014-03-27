@@ -1,5 +1,5 @@
 /**
- * clientWrapper.js
+ * execute.js
  * Łukasz Czapliński, ii.uni.wroc.pl
  * 13-03-2014
  * */

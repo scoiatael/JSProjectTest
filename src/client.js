@@ -35,6 +35,9 @@ try {
  * * get_list             - returns list of ids             - function () -> [String]
  * * destroy              - destroys client                 - function ()
  * * get_id               - returns self id                 - function () -> String
+ * * is_destroyed         - checks if client is closed      - function () -> Bool
+ * * is_connected         - checks if given client is       - function (d) -> Bool
+ *                            connected
  * */
 function makeClient (obj) {
   /**
@@ -65,7 +68,7 @@ function makeClient (obj) {
   var connectTo;
   var exitGracefully;
   var sanityCheck;
-  var leaveMsg = '__leaving__';
+  var leaveMsg = { type : 'leaving' };
 
   forwardError =  function(err) {
     if(_.has(obj, 'error_handler')) {
@@ -91,20 +94,24 @@ function makeClient (obj) {
       forwardError(new Error('cannot close nonexistant connection: ' + id));
     }
   };
-  addConnection =  function(conn) {
-    if(conn.label !== 'chat' || _.has(connections, conn.peer)) {
+  addConnection =  function(conn, quiet) {
+    if(_.has(connections, conn.peer)) {
       /**
        * bad things happened
        * */
       forwardError(new Error('Unexpected happened'));
     }
     conn.on('open', function () {
-      connections[conn.peer] = conn;
+      if(! quiet) {
+        connections[conn.peer] = conn;
+      }
       if(_.has(obj, 'on_open')){
         obj.on_open(conn.peer);
       }
     });
-    conn.on('close', closeConnection);
+    if(! quiet) {
+      conn.on('close', closeConnection);
+    }
     conn.on('error', forwardError);
     conn.on('data',  _.partial(recvFrom, conn.peer));
     if(_.has(obj, 'on_connection')){
@@ -113,13 +120,12 @@ function makeClient (obj) {
   };
   sendTo = function(id, what) {
     sanityCheck();
-    var done;
+    var done = false;
     if(_.has(connections, id)) {
       connections[id].send(what);
       done = true;
     } else {
       forwardError(new Error('cannot send to nonexistant connection: ' + id));
-      done = false;
     }
     return done;
   };
@@ -133,11 +139,11 @@ function makeClient (obj) {
       closeConnection(who);
     }
   };
-  connectTo = function (id) {
+  connectTo = function (id, options) {
     sanityCheck();
-    addConnection(peer.connect(id, {
-      label : 'chat'
-    }));
+    var conn = peer.connect(id, options);
+    addConnection(conn, options.quiet);
+    return conn;
   };
 
   exitGracefully = function () {
@@ -168,7 +174,9 @@ function makeClient (obj) {
     close : closeConnection, 
     get_list : function () { return _.keys(connections); },
     destroy : exitGracefully,
-    get_id : function () { return myId; }
+    get_id : function () { return myId; },
+    is_destroyed : function () { return peer.destroyed; },
+    is_connected : function (d) { return _.has(connections, d); }
 
   };
 

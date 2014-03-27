@@ -1,13 +1,14 @@
 /**
- * metadata.js
+ * history.js
  * Łukasz Czapliński, ii.uni.wroc.pl
  * 18-03-2014
  * */
 var _;
-var makeClient;
+var Message;
 
 try {
   _ = require('underscore'); 
+ Message = require('../message.js'); 
 } catch(err) {
   /**
    * sth
@@ -23,18 +24,11 @@ function makeClientConnection(obj) {
       if(_.has(obj, 'on_data')) {
         obj.on_data.apply(this, arguments);
       }
-      if(_.has(d, 'type') && d.type === 'metadata') {
-        if(typeof d.metadata !== 'object') {
-          /* received sth abnormal
-           * Error or just silent ignore?
-           * */
-          throw new Error("Expected object as metadata prop");
+      if( Message.is_message(d) ) {
+        if(!(_.has(info, p) && typeof info[p] !== 'undefined')) {
+          info[p] = []; 
         }
-        if(_.has(info, p) && typeof info[p] !== 'undefined') {
-          _.extend(info[p], d.metadata);
-        } else {
-         info[p] = d.metadata; 
-        }
+        info[p].push(Message.get_message(d));
       }
     },
     on_close : function () {
@@ -51,7 +45,7 @@ function makeClientConnection(obj) {
       }
     }
   };
-  function getMeta (p) {
+  function getHist (p) {
     if(_.has(info, p)) {
       return info[p];
     }
@@ -60,7 +54,7 @@ function makeClientConnection(obj) {
     opt : _.extend(obj, new_obj),
     extension : function(client) {
       is_connected = client.is_connected;
-      return _.extend(client, { get_metadata : getMeta });
+      return _.extend(client, { get_history : getHist });
     }
   };
 }
