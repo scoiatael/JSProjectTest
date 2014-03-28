@@ -44,10 +44,10 @@ function makeClientConnection(obj) {
     opt : _.extend(obj, new_obj),
     extension : function(client) {
       function check_connections () {
-        _.map(pending_connections, function (val, key) {
+        _.each(pending_connections, function (val, key) {
           client.close(val);
         });
-        _.map(client.get_list(), function(val, key) {
+        _.each(client.get_list(), function(val, key) {
           client.send(val, { type : 'ping' });
           pending_connections.push(val);
         });

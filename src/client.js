@@ -59,7 +59,7 @@ function makeClient (obj) {
     return ret;
   } ());
 
-  var myId;
+  var myId = 'Disconnected';
   var forwardError;
   var closeConnection;
   var addConnection;
@@ -141,8 +141,12 @@ function makeClient (obj) {
   };
   connectTo = function (id, options) {
     sanityCheck();
-    var conn = peer.connect(id, options);
-    addConnection(conn, options.quiet);
+    var opts = options;
+    if (typeof options === 'undefined') {
+      opts = {};  
+    }
+    var conn = peer.connect(id, opts);
+    addConnection(conn, opts.quiet || false);
     return conn;
   };
 

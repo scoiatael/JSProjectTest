@@ -21,10 +21,12 @@ try {
   React = require('react');
   extend_client = require('./clientWrapper.js');
   Message = require('./message.js');
-  extensions = _.map(['metadata', 'autocomplete', 'execute', 'history'],
-      function(name) {
-        return require('./client_wrappers/' + name + '.js');
-      });
+  extensions = [
+      require('./client_wrappers/autocomplete.js'), 
+      require('./client_wrappers/metadata.js'), 
+      require('./client_wrappers/execute.js'), 
+      require('./client_wrappers/history.js')
+        ];
   tabber = require('./tabber.js');
   messageDisplay = require('./messageDisplay.js');
   executionForm = require('./executionForm.js');
@@ -71,22 +73,22 @@ var connectionManager = React.createClass({
     this.state.messages = this.state.connection.get_history(peer) || [];
   },
   generateTabs : function() {
-    return _.map(function(key) {
-      return (this.state.connection.get_meta(key) || { name : key }).name || key;
-    }, this.state.connection.get_list());
+    return _.map(this.state.connection.get_list(), function(key) {
+      return (this.state.connection.get_metadata(key) || { name : key }).name || key;
+    }, this );
   },
   render : function () {
     return (
       <div id = 'main'>
         <div><h2>{this.state.connection.get_id()}</h2>
         </div>
-        <tabber onClick={this.handleClick} items={this.generateTabs()} />
+          <tabber active={this.state.clicked} onClick={this.handleClick} items={this.generateTabs()} /> 
         <div>
           <div id='message-box'>
-            <messageDisplay messages={this.state.messages} name='messages'/>
-            <executionForm execute ={this.execute} getSuggestions={this.state.connection.complete} />
+            <messageDisplay messages={this.state.messages} name='messages'/> 
+            <executionForm execute ={this.execute} getSuggestions={this.state.connection.complete} /> 
           </div>
-          <messageDisplay messages={this.state.errors} name='errors' />
+            <messageDisplay messages={this.state.errors} name='errors' /> 
         </div>
       </div>
       );
@@ -136,4 +138,5 @@ module.exports = function () {
   };
   window.addEventListener('beforeunload', cleanup);
   React.renderComponent(< connectionManager event={cleanup}/>, document.getElementById('js-content'));
+  //React.renderComponent(< helloX name='World'/>, document.getElementById('js-content'));
 };

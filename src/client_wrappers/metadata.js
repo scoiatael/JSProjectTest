@@ -4,7 +4,6 @@
  * 18-03-2014
  * */
 var _;
-var makeClient;
 
 try {
   _ = require('underscore'); 

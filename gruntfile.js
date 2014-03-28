@@ -26,7 +26,7 @@ module.exports = function(grunt) {
     react: {
       files: {
         expand: true,
-        cwd: 'src/',
+        cwd: 'src/jsx/',
         src: ['**/*.jsx'],
         dest: 'tmp/',
         ext: '.js'
@@ -56,7 +56,7 @@ module.exports = function(grunt) {
     },
     symlink: {
       options: {
-        overwrite:false
+        overwrite:true
       },
       expanded: {
         files: [ {

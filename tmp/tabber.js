@@ -33,19 +33,19 @@ var tabber = (function () {
   function createButton(item, i) {
     console.log('creating button ' + i.toString());
     return (
-      <button className='tabber-tab'
-              data-active={isButtonActive.call(this, i)}
-              onClick={handleClick.bind(this, i)} key={i}>
-      {item}
-      </button>
+      React.DOM.button( {className:"tabber-tab",
+              'data-active':isButtonActive.call(this, i),
+              onClick:handleClick.bind(this, i), key:i}, 
+      item
+      )
       );
   }
   return React.createClass({
     render: function() {
       return (
-        <div id='tabber-div'>
-          { _.map(this.props.items, createButton, this) }
-        </div>
+        React.DOM.div( {id:"tabber-div"}, 
+           _.map(this.props.items, createButton, this) 
+        )
         );
     }});
 }());

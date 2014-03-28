@@ -39,10 +39,10 @@ var executionForm = (function () {
     }, 100),
     render : function () {
       return (
-        <form id='execute-form' onSubmit={handleSubmit.bind(this)} >
-        <input type='submit' value='Post' id='post-button'/>
-        <input type='text' placeholder='command..' ref='text' id='post-text'/>
-        </form>);
+        React.DOM.form( {id:"execute-form", onSubmit:handleSubmit.bind(this)} , 
+        React.DOM.input( {type:"submit", value:"Post", id:"post-button"}),
+        React.DOM.input( {type:"text", placeholder:"command..", ref:"text", id:"post-text"})
+        ));
     }
   });
 }());

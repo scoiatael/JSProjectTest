@@ -4,7 +4,7 @@ var rendering = require('./tmp/main.js');
 
 rendering();
 
-},{"./tmp/main.js":138}],2:[function(require,module,exports){
+},{"./tmp/main.js":143}],2:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -18205,7 +18205,7 @@ function makeClient (obj) {
     return ret;
   } ());
 
-  var myId;
+  var myId = 'Disconnected';
   var forwardError;
   var closeConnection;
   var addConnection;
@@ -18287,8 +18287,12 @@ function makeClient (obj) {
   };
   connectTo = function (id, options) {
     sanityCheck();
-    var conn = peer.connect(id, options);
-    addConnection(conn, options.quiet);
+    var opts = options;
+    if (typeof options === 'undefined') {
+      opts = {};  
+    }
+    var conn = peer.connect(id, opts);
+    addConnection(conn, opts.quiet || false);
     return conn;
   };
 
@@ -18330,7 +18334,7 @@ function makeClient (obj) {
 
 module.exports = makeClient;
 
-},{"./keys.js":137,"underscore":133}],135:[function(require,module,exports){
+},{"./keys.js":142,"underscore":133}],135:[function(require,module,exports){
 /**
  * clientWrapper.js
  * Łukasz Czapliński, ii.uni.wroc.pl
@@ -18373,7 +18377,255 @@ function clientExtend (obj) {
 
 module.exports = clientExtend;
 
-},{"./client.js":134,"./common.js":136,"underscore":133}],136:[function(require,module,exports){
+},{"./client.js":134,"./common.js":140,"underscore":133}],136:[function(require,module,exports){
+/**
+ * autocomplete.js
+ * Łukasz Czapliński, ii.uni.wroc.pl
+ * 18-03-2014
+ * */
+var _;
+var makeClient;
+
+try {
+  _ = require('underscore'); 
+} catch(err) {
+  /**
+   * sth
+   **/ 
+  console.error(err);
+}
+
+function makeClientConnection(obj) {
+  return {
+    opt : obj,
+    extension : function(client) {
+      function comp (str) {
+        return _.reduce(client.get_list(), function (memo, val, key) {
+          if(val.indexOf(str) === 0) {
+            memo.push(val);
+          }
+        }, []);
+      }
+      return _.extend(client, { complete : comp });
+    }
+  };
+}
+
+module.exports = makeClientConnection;
+
+},{"underscore":133}],137:[function(require,module,exports){
+/**
+ * execute.js
+ * Łukasz Czapliński, ii.uni.wroc.pl
+ * 13-03-2014
+ * */
+var _;
+var makeClient;
+
+try {
+  _ = require('underscore'); 
+} catch(err) {
+  /**
+   * sth
+   **/ 
+  console.error(err);
+}
+
+/**
+ * creates wrapper around client
+ * expectes argument identical to that of makeClient from client.js
+ * returns function which executes string given as argument
+ * available commands:
+ * * sendto
+ * * connecto
+ * * list
+ * * destroy
+ * * closec
+ * * id
+ * */
+function makeClientConnection(obj) {
+  return { 
+    opt : obj, 
+    extension : function (client) {
+      function bindCommandFunction (command, id, fn, prettify) {
+        if(_.first(command) === id) {
+//          console.log('Executing ' + command);
+          var r = fn(_.rest(command).join(' '));
+          if(typeof prettify === 'function') {
+            r = prettify(r);
+          }
+          return r;
+        }
+      }
+
+      function constString(str) {
+        return function () { return str; };
+      }
+
+      function execute (string_command) {
+        var command = string_command.split(' ');
+        var ret = null;
+        ret = ret || bindCommandFunction(command, 'sendto', function(com) { 
+          var c = com.split(' ');
+          var receiver = _.first(c);
+          var message = _.rest(c).join(' ');
+          client.send(receiver, message);
+          return '-> ' + receiver + ' : ' + message; });
+        ret = ret || bindCommandFunction(command, 'connecto', client.connect, 
+            constString('connecting to ' + _.chain(command).rest().first().value()));
+        ret = ret || bindCommandFunction(command, 'list', client.get_list);
+        ret = ret || bindCommandFunction(command, 'destroy', client.destroy, constString("Bye!"));
+        ret = ret || bindCommandFunction(command, 'closec', client.close);
+        ret = ret || bindCommandFunction(command, 'id', client.get_id);
+        ret = ret || ('Unknown command: ' + string_command);
+        return ret;
+      }
+
+      function accVals () {
+        return [ 'sendto', 'connecto', 'list', 'destroy', 'closec', 'id' ];
+      }
+
+      return _.extend(client, {execute : execute, accepted_values : accVals});
+    }
+  };
+}
+
+module.exports = makeClientConnection;
+
+},{"underscore":133}],138:[function(require,module,exports){
+/**
+ * history.js
+ * Łukasz Czapliński, ii.uni.wroc.pl
+ * 18-03-2014
+ * */
+var _;
+var Message;
+
+try {
+  _ = require('underscore'); 
+ Message = require('../message.js'); 
+} catch(err) {
+  /**
+   * sth
+   **/ 
+  console.error(err);
+}
+
+function makeClientConnection(obj) {
+  var info = {};
+  var is_connected = function() { return false;};
+  var new_obj = {
+    on_data : function(p,d) {
+      if(_.has(obj, 'on_data')) {
+        obj.on_data.apply(this, arguments);
+      }
+      if( Message.is_message(d) ) {
+        if(!(_.has(info, p) && typeof info[p] !== 'undefined')) {
+          info[p] = []; 
+        }
+        info[p].push(Message.get_message(d));
+      }
+    },
+    on_close : function () {
+      var iter;
+      if(_.has(obj, 'on_close')) {
+        obj.on_close.apply(this, arguments);
+      }
+      for(iter in info) {
+        if(info.hasOwnProperty(iter)) {
+          if(!is_connected(iter)) {
+            delete info[iter];
+          }
+        }
+      }
+    }
+  };
+  function getHist (p) {
+    if(_.has(info, p)) {
+      return info[p];
+    }
+  }
+  return {
+    opt : _.extend(obj, new_obj),
+    extension : function(client) {
+      is_connected = client.is_connected;
+      return _.extend(client, { get_history : getHist });
+    }
+  };
+}
+
+module.exports = makeClientConnection;
+
+},{"../message.js":144,"underscore":133}],139:[function(require,module,exports){
+/**
+ * metadata.js
+ * Łukasz Czapliński, ii.uni.wroc.pl
+ * 18-03-2014
+ * */
+var _;
+
+try {
+  _ = require('underscore'); 
+} catch(err) {
+  /**
+   * sth
+   **/ 
+  console.error(err);
+}
+
+function makeClientConnection(obj) {
+  var info = {};
+  var is_connected = function() { return false;};
+  var new_obj = {
+    on_data : function(p,d) {
+      if(_.has(obj, 'on_data')) {
+        obj.on_data.apply(this, arguments);
+      }
+      if(_.has(d, 'type') && d.type === 'metadata') {
+        if(typeof d.metadata !== 'object') {
+          /* received sth abnormal
+           * Error or just silent ignore?
+           * */
+          throw new Error("Expected object as metadata prop");
+        }
+        if(_.has(info, p) && typeof info[p] !== 'undefined') {
+          _.extend(info[p], d.metadata);
+        } else {
+         info[p] = d.metadata; 
+        }
+      }
+    },
+    on_close : function () {
+      var iter;
+      if(_.has(obj, 'on_close')) {
+        obj.on_close.apply(this, arguments);
+      }
+      for(iter in info) {
+        if(info.hasOwnProperty(iter)) {
+          if(!is_connected(iter)) {
+            delete info[iter];
+          }
+        }
+      }
+    }
+  };
+  function getMeta (p) {
+    if(_.has(info, p)) {
+      return info[p];
+    }
+  }
+  return {
+    opt : _.extend(obj, new_obj),
+    extension : function(client) {
+      is_connected = client.is_connected;
+      return _.extend(client, { get_metadata : getMeta });
+    }
+  };
+}
+
+module.exports = makeClientConnection;
+
+},{"underscore":133}],140:[function(require,module,exports){
 /**
  * common.js
  * Łukasz Czapliński, ii.uni.wroc.pl
@@ -18404,7 +18656,59 @@ function check(obj, list) {
 
 module.exports = { check_for_properties : check, log_error : logError };
 
-},{"underscore":133}],137:[function(require,module,exports){
+},{"underscore":133}],141:[function(require,module,exports){
+/** @jsx React.DOM */
+/**
+ * executionForm.jsx
+ * Łukasz Czapliński, ii.uni.wroc.pl
+ * 27-03-2014
+ * */
+
+var _;
+var React;
+
+try {
+  _ = require('underscore');
+  React = require('react');
+} catch(err) {
+  /**
+   * sth
+   * */
+  console.error('(' + err.name + ')' + err.message);
+}
+
+var executionForm = (function () {
+  function handleSubmit () {
+    var txt = this.refs.text.getDOMNode().value.trim();
+    if(!txt) {
+      return false;
+    }
+    this.props.execute(txt);
+    this.refs.text.getDOMNode().value = '';
+    return false;
+  }
+  return React.createClass({
+    onKeyUp : _.debounce(function () {
+      var txt = _.last(this.refs.text.getDOMNode().value.trim().split(' '));
+      var sugg;
+      sugg = this.props.getSuggestions(txt);
+      if( _.size(sugg) === 1) {
+        this.refs.text.getDOMNode().value = sugg;
+      }
+    }, 100),
+    render : function () {
+      return (
+        React.DOM.form( {id:"execute-form", onSubmit:handleSubmit.bind(this)} , 
+        React.DOM.input( {type:"submit", value:"Post", id:"post-button"}),
+        React.DOM.input( {type:"text", placeholder:"command..", ref:"text", id:"post-text"})
+        ));
+    }
+  });
+}());
+
+module.exports = executionForm;
+
+},{"react":132,"underscore":133}],142:[function(require,module,exports){
 /**
  * keys.js
  * Łukasz Czapliński, ii.uni.wroc.pl
@@ -18416,7 +18720,7 @@ var apiKeys = {
 
 module.exports = apiKeys;
 
-},{}],138:[function(require,module,exports){
+},{}],143:[function(require,module,exports){
 /** @jsx React.DOM */
 /**
  * main.jsx
@@ -18431,105 +18735,30 @@ var _;
 var Message;
 var extend_client;
 var extensions = [];
+var tabber;
+var messageDisplay;
+var executionForm;
 
 try {
   _ = require('underscore');
   React = require('react');
   extend_client = require('./clientWrapper.js');
   Message = require('./message.js');
-  extensions = _.map(['metadata', 'autocomplete', 'execute', 'history'],
-      function(name) {
-        return require('./client_wrappers/' + name + '.js');
-      });
+  extensions = [
+      require('./client_wrappers/autocomplete.js'), 
+      require('./client_wrappers/metadata.js'), 
+      require('./client_wrappers/execute.js'), 
+      require('./client_wrappers/history.js')
+        ];
+  tabber = require('./tabber.js');
+  messageDisplay = require('./messageDisplay.js');
+  executionForm = require('./executionForm.js');
 } catch(err) {
   /**
    * sth
    * */
   console.error('(' + err.name + ')' + err.message);
 }
-
-var tabber = React.createClass({displayName: 'tabber',
-  handleClick: function(i) {
-    console.log('clicked ' + this.props.items[i]);
-    this.props.handleClick(i);
-  },
-  buttonActive : function(c,i) {
-    var ret = '0';
-    if(c === i) {
-     ret = '1';
-    } 
-    return ret;
-  },
-  render: function() {
-    return (
-      React.DOM.div( {id:"tabber-div"}, 
-        
-          this.props.items.map(function(item, i) {
-            return (
-              React.DOM.button( {className:"tabber-tab",
-                      'data-active':this.buttonActive(this.state.clicked, i),
-                      onClick:this.handleClick.bind(this, i), key:i}, 
-              item
-              )
-              );
-          }, this) 
-        
-      )
-      );
-  }
-});
-
-
-var messageDisplay = React.createClass({displayName: 'messageDisplay',
-  render : function () {
-    return (
-      React.DOM.div( {id:this.props.name}, 
-       
-        _.map(this.props.messages, function(val, k) {
-          return (React.DOM.div( {className:"message", key:k}, val));
-        })
-      
-      ))
-  },
-  componentWillUpdate: function() {
-    var node = this.getDOMNode();
-    this.shouldScrollBottom = node.scrollTop + node.offsetHeight === node.scrollHeight;
-  },
-   
-  componentDidUpdate: function() {
-    if (this.shouldScrollBottom) {
-      var node = this.getDOMNode();
-      node.scrollTop = node.scrollHeight
-    }
-  }
-});
-
-var executionForm = React.createClass({displayName: 'executionForm',
-  onKeyUp : _.debounce(function () {
-    var txt = _.last(this.refs.text.getDOMNode().value.trim().split(' '));
-    var sugg;
-    sugg = this.props.getSuggestions(txt);
-    if( _.size(sugg) === 1) {
-      this.refs.text.getDOMNode().value = sugg;
-    }
-  }, 100),
-  handleSubmit : function() {
-    var txt = this.refs.text.getDOMNode().value.trim();
-    if(!txt) {
-      return false;
-    }
-    this.props.execute(txt);
-    this.refs.text.getDOMNode().value = '';
-    return false;
-  },
-  render : function () {
-    return (
-      React.DOM.form( {id:"execute-form", onSubmit:this.handleSubmit} , 
-      React.DOM.input( {type:"submit", value:"Post", id:"post-button"}),
-      React.DOM.input( {type:"text", placeholder:"command..", ref:"text", id:"post-text"})
-      ));
-  }
-});
 
 var connectionManager = React.createClass({displayName: 'connectionManager',
   newMessage : function (text) {
@@ -18556,9 +18785,9 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
     }
   },
   handleError : function (err) {
-    pushToErrors('(' + err.name + ') ' + err.message);
+    this.pushToErrors('(' + err.name + ') ' + err.message);
   },
-  activePeer : function() {
+  activePeer : function(i) {
     return this.state.connection.get_list()[i];
   },
   handleClick : function (i) {
@@ -18567,22 +18796,22 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
     this.state.messages = this.state.connection.get_history(peer) || [];
   },
   generateTabs : function() {
-    return _.map(function(key) {
-      return (this.state.connection.get_meta(key) || { name : key }).name || key;
-    }, this.state.connection.get_list());
+    return _.map(this.state.connection.get_list(), function(key) {
+      return (this.state.connection.get_metadata(key) || { name : key }).name || key;
+    }, this );
   },
   render : function () {
     return (
       React.DOM.div( {id:  "main"}, 
         React.DOM.div(null, React.DOM.h2(null, this.state.connection.get_id())
         ),
-        tabber( {onClick:this.handleClick, items:this.generateTabs()} ),
+          tabber( {active:this.state.clicked, onClick:this.handleClick, items:this.generateTabs()} ), 
         React.DOM.div(null, 
           React.DOM.div( {id:"message-box"}, 
-            messageDisplay( {messages:this.state.messages, name:"messages"}),
-            executionForm( {execute: this.execute, getSuggestions:this.state.connection.complete} )
+            messageDisplay( {messages:this.state.messages, name:"messages"}), 
+            executionForm( {execute: this.execute, getSuggestions:this.state.connection.complete} ) 
           ),
-          messageDisplay( {messages:this.state.errors, name:"errors"} )
+            messageDisplay( {messages:this.state.errors, name:"errors"} ) 
         )
       )
       );
@@ -18632,9 +18861,10 @@ module.exports = function () {
   };
   window.addEventListener('beforeunload', cleanup);
   React.renderComponent(connectionManager( {event:cleanup}), document.getElementById('js-content'));
+  //React.renderComponent(< helloX name='World'/>, document.getElementById('js-content'));
 };
 
-},{"./clientWrapper.js":135,"./message.js":139,"react":132,"underscore":133}],139:[function(require,module,exports){
+},{"./clientWrapper.js":135,"./client_wrappers/autocomplete.js":136,"./client_wrappers/execute.js":137,"./client_wrappers/history.js":138,"./client_wrappers/metadata.js":139,"./executionForm.js":141,"./message.js":144,"./messageDisplay.js":145,"./tabber.js":146,"react":132,"underscore":133}],144:[function(require,module,exports){
 
 
 function isMessage(d) {
@@ -18650,6 +18880,108 @@ function getMessage(d) {
   }
 }
 
-module.exports = { is_message : isMessage, get_message : get_message };
+module.exports = { is_message : isMessage, get_message : getMessage };
 
-},{}]},{},[1])
+},{}],145:[function(require,module,exports){
+/** @jsx React.DOM */
+/**
+ * messageDisplay.jsx
+ * Łukasz Czapliński, ii.uni.wroc.pl
+ * 27-03-2014
+ * */
+
+var _;
+var React;
+
+try {
+  _ = require('underscore');
+  React = require('react');
+} catch(err) {
+  /**
+   * sth
+   * */
+  console.error('(' + err.name + ')' + err.message);
+}
+
+var messageDisplay = React.createClass({displayName: 'messageDisplay',
+  render : function () {
+    return (
+      React.DOM.div( {id:this.props.name}, 
+       
+        _.map(this.props.messages, function(val, k) {
+          return (React.DOM.div( {className:"message", key:k}, val));
+        })
+      
+      ))
+  },
+  componentWillUpdate: function() {
+    var node = this.getDOMNode();
+    this.shouldScrollBottom = node.scrollTop + node.offsetHeight === node.scrollHeight;
+  },
+   
+  componentDidUpdate: function() {
+    if (this.shouldScrollBottom) {
+      var node = this.getDOMNode();
+      node.scrollTop = node.scrollHeight
+    }
+  }
+});
+
+module.exports = messageDisplay;
+
+},{"react":132,"underscore":133}],146:[function(require,module,exports){
+/** @jsx React.DOM */
+/**
+ * tabber.jsx
+ * Łukasz Czapliński, ii.uni.wroc.pl
+ * 27-03-2014
+ * */
+
+var _;
+var React;
+
+try {
+  _ = require('underscore');
+  React = require('react');
+} catch(err) {
+  /**
+   * sth
+   * */
+  console.error('(' + err.name + ')' + err.message);
+}
+
+var tabber = (function () { 
+  function handleClick (i) {
+    console.log('clicked ' + this.props.items[i]);
+    this.props.onClick(i);
+  }
+  function isButtonActive (i) {
+    var ret = '0';
+    if(this.props.active === i) {
+     ret = '1';
+    } 
+    return ret;
+  }
+  function createButton(item, i) {
+    console.log('creating button ' + i.toString());
+    return (
+      React.DOM.button( {className:"tabber-tab",
+              'data-active':isButtonActive.call(this, i),
+              onClick:handleClick.bind(this, i), key:i}, 
+      item
+      )
+      );
+  }
+  return React.createClass({
+    render: function() {
+      return (
+        React.DOM.div( {id:"tabber-div"}, 
+           _.map(this.props.items, createButton, this) 
+        )
+        );
+    }});
+}());
+
+module.exports = tabber;
+
+},{"react":132,"underscore":133}]},{},[1])
