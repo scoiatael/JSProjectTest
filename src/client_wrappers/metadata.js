@@ -17,6 +17,9 @@ try {
 function makeClientConnection(obj) {
   var info = {};
   var is_connected = function() { return false;};
+  var get_list = function () { return []; };
+  var send = function () { };
+  var myMeta = {};
   var new_obj = {
     on_data : function(p,d) {
       if(_.has(obj, 'on_data')) {
@@ -48,6 +51,9 @@ function makeClientConnection(obj) {
           }
         }
       }
+    },
+    on_open : function (p) {
+      send(p, { type : 'metadata', metadata : myMeta });
     }
   };
   function getMeta (p) {
@@ -55,11 +61,22 @@ function makeClientConnection(obj) {
       return info[p];
     }
   }
+  function setMeta (newMeta) {
+    myMeta = newMeta;
+    _.each(get_list(), function (el) {
+      send(el, { type : 'metadata', metadata: newMeta });
+    });
+  }
   return {
     opt : _.extend(obj, new_obj),
     extension : function(client) {
+      send = client.send;
+      get_list = client.get_list;
       is_connected = client.is_connected;
-      return _.extend(client, { get_metadata : getMeta });
+      return _.extend(client, { 
+        get_metadata : getMeta, 
+        set_metadata : setMeta
+      });
     }
   };
 }

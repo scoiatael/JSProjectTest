@@ -18576,6 +18576,9 @@ try {
 function makeClientConnection(obj) {
   var info = {};
   var is_connected = function() { return false;};
+  var get_list = function () { return []; };
+  var send = function () { };
+  var myMeta = {};
   var new_obj = {
     on_data : function(p,d) {
       if(_.has(obj, 'on_data')) {
@@ -18607,6 +18610,9 @@ function makeClientConnection(obj) {
           }
         }
       }
+    },
+    on_open : function (p) {
+      send(p, { type : 'metadata', metadata : myMeta });
     }
   };
   function getMeta (p) {
@@ -18614,11 +18620,22 @@ function makeClientConnection(obj) {
       return info[p];
     }
   }
+  function setMeta (newMeta) {
+    myMeta = newMeta;
+    _.each(get_list(), function (el) {
+      send(el, { type : 'metadata', metadata: newMeta });
+    });
+  }
   return {
     opt : _.extend(obj, new_obj),
     extension : function(client) {
+      send = client.send;
+      get_list = client.get_list;
       is_connected = client.is_connected;
-      return _.extend(client, { get_metadata : getMeta });
+      return _.extend(client, { 
+        get_metadata : getMeta, 
+        set_metadata : setMeta
+      });
     }
   };
 }
@@ -18860,12 +18877,17 @@ module.exports = function () {
     return "are you sure?";
   };
   window.addEventListener('beforeunload', cleanup);
+  window.addEventListener('beforereload', cleanup);
   React.renderComponent(connectionManager( {event:cleanup}), document.getElementById('js-content'));
   //React.renderComponent(< helloX name='World'/>, document.getElementById('js-content'));
 };
 
 },{"./clientWrapper.js":135,"./client_wrappers/autocomplete.js":136,"./client_wrappers/execute.js":137,"./client_wrappers/history.js":138,"./client_wrappers/metadata.js":139,"./executionForm.js":141,"./message.js":144,"./messageDisplay.js":145,"./tabber.js":146,"react":132,"underscore":133}],144:[function(require,module,exports){
-
+/**
+ * message.js
+ * Łukasz Czapliński, ii.uni.wroc.pl
+ * 09-04-2014
+ * */
 
 function isMessage(d) {
   return (typeof d === 'string') || (typeof d === 'object' && typeof d.chat === 'string');

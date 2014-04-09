@@ -1,4 +1,8 @@
-
+/**
+ * message.js
+ * Łukasz Czapliński, ii.uni.wroc.pl
+ * 09-04-2014
+ * */
 
 function isMessage(d) {
   return (typeof d === 'string') || (typeof d === 'object' && typeof d.chat === 'string');

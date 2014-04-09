@@ -137,6 +137,7 @@ module.exports = function () {
     return "are you sure?";
   };
   window.addEventListener('beforeunload', cleanup);
+  window.addEventListener('beforereload', cleanup);
   React.renderComponent(< connectionManager event={cleanup}/>, document.getElementById('js-content'));
   //React.renderComponent(< helloX name='World'/>, document.getElementById('js-content'));
 };
