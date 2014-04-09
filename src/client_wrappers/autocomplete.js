@@ -16,8 +16,17 @@ try {
 }
 
 function makeClientConnection(obj) {
+  var new_obj = {
+    extensions : (function () {
+      var r = ['autocomplete'];
+      if(_.has(obj, 'extensions')) {
+        r = obj.extensions.concat(r);
+      }
+      return r;
+    }()),
+  };
   return {
-    opt : obj,
+    opt : _.extend(obj, new_obj),
     extension : function(client) {
       function comp (str) {
         return _.reduce(client.get_list(), function (memo, val, key) {

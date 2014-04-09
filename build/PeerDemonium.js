@@ -1,10 +1,27 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /* jshint node:true*/
 var rendering = require('./tmp/main.js');
+var _ = require('underscore');
+
+var nobj = (function (obj) {
+  var count = 0;
+  return {
+    run : function () {
+      if(_.has(obj, 'run')) {
+        count ++;
+        console.log('run ' + count.toString());
+        obj.run.apply(this, arguments);
+      }
+    }
+  };
+} ( { run : function () { console.log('base run'); } } ));
+
+nobj.run();
+
 
 rendering();
 
-},{"./tmp/main.js":145}],2:[function(require,module,exports){
+},{"./tmp/main.js":145,"underscore":133}],2:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -18355,7 +18372,7 @@ function makeClient (obj) {
     opened = true; 
     myId = i; 
     if(_.has(obj, 'on_create')){
-      obj.on_create();
+      obj.on_create(i);
     }
   } );
 
@@ -18413,6 +18430,9 @@ function clientExtend (obj) {
       fs.push(r.extension);
       return r.opt;
     }, opt);
+    if(_.has(opt, 'extensions')) {
+      console.log('Used client extensions: ' + opt.extensions);
+    }
     return _.reduce(fs, function (memo, item) {
       return item(memo); 
     }, client(opts)); 
@@ -18440,8 +18460,17 @@ try {
 }
 
 function makeClientConnection(obj) {
+  var new_obj = {
+    extensions : (function () {
+      var r = ['autocomplete'];
+      if(_.has(obj, 'extensions')) {
+        r = obj.extensions.concat(r);
+      }
+      return r;
+    }()),
+  };
   return {
-    opt : obj,
+    opt : _.extend(obj, new_obj),
     extension : function(client) {
       function comp (str) {
         return _.reduce(client.get_list(), function (memo, val, key) {
@@ -18488,8 +18517,17 @@ try {
  * * id
  * */
 function makeClientConnection(obj) {
+  var new_obj = {
+    extensions : (function () {
+      var r = ['execute'];
+      if(_.has(obj, 'extensions')) {
+        r = obj.extensions.concat(r);
+      }
+      return r;
+    }())
+  };
   return { 
-    opt : obj, 
+    opt : _.extend(obj, new_obj), 
     extension : function (client) {
       function bindCommandFunction (command, id, fn, prettify) {
         if(_.first(command) === id) {
@@ -18510,7 +18548,12 @@ function makeClientConnection(obj) {
         var c = _.first(command);
         console.log(c);
         if(_.has(client, c)) {
-          var r = client[c](_.rest(command)) || 'done';
+          var r = client[c](_.rest(command));
+          if(_.has(r, 'toString')) {
+            r = r.toString();
+          } else {
+            r = r || 'done';
+          }
           if(typeof prettify === 'function') {
             r = prettify(r);
           }
@@ -18590,6 +18633,13 @@ function makeClientConnection(obj) {
   var info = {};
   var is_connected = function() { return false;};
   var new_obj = {
+    extensions : (function () {
+      var r = ['history'];
+      if(_.has(obj, 'extensions')) {
+        r = obj.extensions.concat(r);
+      }
+      return r;
+    }()),
     on_data : function(p,d) {
       if(_.has(obj, 'on_data')) {
         obj.on_data.apply(this, arguments);
@@ -18655,6 +18705,13 @@ function makeClientConnection(obj) {
   var send = function () { };
   var myMeta = {};
   var new_obj = {
+    extensions : (function () {
+      var r = ['metadata'];
+      if(_.has(obj, 'extensions')) {
+        r = obj.extensions.concat(r);
+      }
+      return r;
+    }()),
     on_data : function(p,d) {
       if(_.has(obj, 'on_data')) {
         obj.on_data.apply(this, arguments);
@@ -18687,6 +18744,9 @@ function makeClientConnection(obj) {
       }
     },
     on_open : function (p) {
+      if(_.has(obj, 'on_open')) {
+        obj.on_open.apply(this, arguments);
+      }
       send(p, { type : 'metadata', metadata : myMeta });
     }
   };
@@ -18755,7 +18815,15 @@ function makeClientConnection(obj) {
   var connect = function () { };
   var startCheckingForServer;
   var startCheckingPeers;
+  console.log(obj.extensions.toString());
   var new_obj = {
+    extensions : (function () {
+      var r = ['server_conn'];
+      if(_.has(obj, 'extensions')) {
+        r = obj.extensions.concat(r);
+      }
+      return r;
+    }()),
     on_data : function(p,d) {
       if(_.has(obj, 'on_data')) {
         obj.on_data.apply(this, arguments);
@@ -18772,13 +18840,16 @@ function makeClientConnection(obj) {
         obj.on_close.apply(this, arguments);
       }
     },
-    on_create : function () {
-      if(_.has(obj, 'on_create')) {
-        obj.on_create.apply(this, arguments);
-      }
-      startCheckingForServer();
-      startCheckingPeers();
-    }
+    on_create : ( function (on_cr) { 
+      return function () {
+        if(typeof on_cr === 'function') {
+          console.log(obj.extensions.toString());
+          console.log(this.extensions.toString());
+          on_cr.apply(this, arguments);
+        }
+        startCheckingForServer();
+        startCheckingPeers();
+      }; } (obj.on_create) )
   };
   function requestPeers () {
     _.each(serverNames, function (el) {
@@ -18835,7 +18906,12 @@ function makeClientConnection(obj) {
       send = client.send;
       connect = client.connect;
       return _.extend(client, { 
-        get_peers : function() { return knownPeers; },
+        get_peers : function() { 
+          var r = [];
+          _.each(knownPeers, function (v,k) {
+            r.push( v + ' : ' + ( k.name || " " ) );
+          }); 
+          return r; },
         request_peers : requestPeers, 
         am_i_server : function () { return amServer; }
       });
@@ -18844,13 +18920,15 @@ function makeClientConnection(obj) {
 }
 
 startServer = function (name) {
-  if(! amServer ) {
-    amServer = name;
-  } else {
-    amServer = [name] + amServer;
-  } 
   var conn = extend_client({
           base_opts: {
+            on_create : function () {
+              if(! amServer ) {
+                amServer = name;
+              } else {
+                amServer = [name] + amServer;
+              } 
+            },
             id : name
           },
           extension_list: extensions.push(makeClientConnection)

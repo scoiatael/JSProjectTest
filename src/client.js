@@ -165,7 +165,7 @@ function makeClient (obj) {
     opened = true; 
     myId = i; 
     if(_.has(obj, 'on_create')){
-      obj.on_create();
+      obj.on_create(i);
     }
   } );
 
