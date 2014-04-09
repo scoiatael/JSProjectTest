@@ -25,7 +25,8 @@ try {
       require('./client_wrappers/autocomplete.js'), 
       require('./client_wrappers/metadata.js'), 
       require('./client_wrappers/execute.js'), 
-      require('./client_wrappers/history.js')
+      require('./client_wrappers/history.js'),
+      require('./client_wrappers/server_conn.js')
         ];
   tabber = require('./tabber.js');
   messageDisplay = require('./messageDisplay.js');
@@ -40,14 +41,19 @@ try {
 var connectionManager = React.createClass({
   newMessage : function (text) {
     var newMessages = _.last(this.state.messages,50);
-    newMessages.push(text);
+    if(typeof text === 'string') {
+      newMessages.push(text);
+    } else {
+      newMessages = newMessages.concat(text);
+    }
     if(this.isMounted()) {
       this.setState({ messages : newMessages});
     }
   },
   execute : function (text) {
     var return_text = this.state.connection.execute(text);
-    this.newMessage('You: ' + return_text); 
+    this.newMessage(['$ ' + text, 
+                     '-> ' + return_text]); 
    },
   handleData : function (id, text) {
     if(Message.is_message(text)) {
@@ -77,10 +83,19 @@ var connectionManager = React.createClass({
       return (this.state.connection.get_metadata(key) || { name : key }).name || key;
     }, this );
   },
+  getName : function () {
+    var r = this.state.connection.my_metadata();
+    if(_.has(r, 'name')) {
+      r = r.name + ' ( ' + this.state.connection.get_id() + ' )';
+    } else {
+      r = this.state.connection.get_id();
+    }
+    return r;
+  },
   render : function () {
     return (
       <div id = 'main'>
-        <div><h2>{this.state.connection.get_id()}</h2>
+        <div><h2>{this.getName()}</h2>
         </div>
           <tabber active={this.state.clicked} onClick={this.handleClick} items={this.generateTabs()} /> 
         <div>

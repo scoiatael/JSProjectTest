@@ -10,9 +10,9 @@ var extensions = [];
 
 try {
   _ = require('underscore'); 
-  extend_client = require('./clientWrapper.js');
+  extend_client = require('../clientWrapper.js');
   extensions = [
-      require('./client_wrappers/metadata.js'), 
+      require('../client_wrappers/metadata.js'), 
         ];
 } catch(err) {
   /**
@@ -31,6 +31,9 @@ function makeClientConnection(obj) {
   var reliablePeers = {};
   var send = function () { };
   var get_list = function () { return {}; };
+  var connect = function () { };
+  var startCheckingForServer;
+  var startCheckingPeers;
   var new_obj = {
     on_data : function(p,d) {
       if(_.has(obj, 'on_data')) {
@@ -47,6 +50,13 @@ function makeClientConnection(obj) {
       if(_.has(obj, 'on_close')) {
         obj.on_close.apply(this, arguments);
       }
+    },
+    on_create : function () {
+      if(_.has(obj, 'on_create')) {
+        obj.on_close.apply(this, arguments);
+      }
+      startCheckingForServer();
+      startCheckingPeers();
     }
   };
   function requestPeers () {
@@ -59,27 +69,28 @@ function makeClientConnection(obj) {
     var sentRequests = {};
     return function(p) {
       if(! _.has(sentRequests, p)) {
+        connect(p);
         sentRequests[p] = {};
-        setTimeout(function () { if(! _.has(get_list(), p)) { startServer(p); }}, 500);
+        setTimeout(function () { if(! _.has(get_list(), p)) { startServer(p); }}, 1500);
       }
     };
   }());
 
-  function startCheckingForServer () {
+  startCheckingForServer = function () {
     _.each(serverNames, function (el) {
       checkForServer(el);
     });
     if(!unload) {
       setTimeout(startCheckingForServer, 1000);
     }
-  }
-  function startCheckingPeers () {
+  };
+  startCheckingPeers = function () {
     knownPeers = reliablePeers;
     _.extend(reliablePeers, get_list());
     if(!unload) {
       setTimeout(startCheckingPeers, 500);
     }
-  }
+  };
   window.addEventListener('onbeforeunload', function () {
     unload = true;
   });
@@ -101,8 +112,7 @@ function makeClientConnection(obj) {
         return obj;
       };
       send = client.send;
-      startCheckingForServer();
-      startCheckingPeers();
+      connect = client.connect;
       return _.extend(client, { 
         get_peers : function() { return knownPeers; },
         request_peers : requestPeers, 
@@ -122,7 +132,7 @@ startServer = function (name) {
           base_opts: {
             id : name
           },
-          extension_list: extensions + [makeClientConnection]
+          extension_list: extensions.push(makeClientConnection)
   });
   window.addEventListener('onbeforeunload', function () {
     conn.destroy();

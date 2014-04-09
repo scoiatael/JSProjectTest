@@ -48,14 +48,15 @@ function makeClientConnection(obj) {
 
       function checkExtensions (command, prettify) {
         var c = _.first(command);
-        if(_.has(client, c) {
-          var r = client[c](_.rest(command));
+        console.log(c);
+        if(_.has(client, c)) {
+          var r = client[c](_.rest(command)) || 'done';
           if(typeof prettify === 'function') {
             r = prettify(r);
           }
           return r;
         }
-      };
+      }
 
       function execute (string_command) {
         var command = string_command.split(' ');
@@ -65,12 +66,18 @@ function makeClientConnection(obj) {
           var receiver = _.first(c);
           var message = _.rest(c).join(' ');
           client.send(receiver, message);
-          return '-> ' + receiver + ' : ' + message; });
+          return receiver + ' : ' + message; });
         ret = ret || bindCommandFunction(command, 'connecto', client.connect, 
             constString('connecting to ' + _.chain(command).rest().first().value()));
         ret = ret || bindCommandFunction(command, 'list', client.get_list);
         ret = ret || bindCommandFunction(command, 'destroy', client.destroy, constString("Bye!"));
         ret = ret || bindCommandFunction(command, 'closec', client.close);
+        if(_.has(client, 'set_metadata')) {
+          ret = ret || bindCommandFunction(command, 'name', function (name) {
+            client.set_metadata(_.extend(client.my_metadata(), { name : name }));
+            return 'Your new name: ' + name;
+          });
+        }
         ret = ret || bindCommandFunction(command, 'id', client.get_id);
         ret = ret || checkExtensions(command);
         ret = ret || ('Unknown command: ' + string_command);
@@ -78,8 +85,10 @@ function makeClientConnection(obj) {
       }
 
       function accVals () {
-        return [ 'sendto', 'connecto', 'list', 'destroy', 'closec', 'id' ] + 
-          _.chain(_.keys(client)).filter(_.isFunction).value();
+        return _.reduce([ 'sendto', 'connecto', 'list', 'destroy', 'closec', 'id', ].concat(
+          _.chain(_.keys(client)).value()), function (base, val) {
+            return val + ', ' + base;
+          }, "");
       }
 
       return _.extend(client, {execute : execute, accepted_values : accVals});
@@ -88,3 +97,12 @@ function makeClientConnection(obj) {
 }
 
 module.exports = makeClientConnection;
+/*
+, (function () { 
+            var r = [];
+            if(_.has(client, 'set_metadata')) {
+              r = [ 'name' ];
+            }
+            return r;
+          }())
+          */

@@ -74,6 +74,7 @@ function makeClientConnection(obj) {
       get_list = client.get_list;
       is_connected = client.is_connected;
       return _.extend(client, { 
+        my_metadata : function () { return myMeta || {}; },
         get_metadata : getMeta, 
         set_metadata : setMeta
       });
