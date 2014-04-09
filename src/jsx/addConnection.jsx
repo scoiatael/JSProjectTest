@@ -1,8 +1,8 @@
 /** @jsx React.DOM */
 /**
- * executionForm.jsx
+ * addConnection.jsx
  * Łukasz Czapliński, ii.uni.wroc.pl
- * 27-03-2014
+ * 29-03-2014
  * */
 
 var _;
@@ -29,20 +29,12 @@ var executionForm = (function () {
     return false;
   }
   return React.createClass({
-    onKeyUp : _.debounce(function () {
-      var txt = _.last(this.refs.text.getDOMNode().value.trim().split(' '));
-      var sugg;
-      sugg = this.props.getSuggestions(txt);
-      if( _.size(sugg) === 1) {
-        this.refs.text.getDOMNode().value = sugg;
-      }
-    }, 100),
     render : function () {
       return (
-        React.DOM.form( {id:"execute-form", onSubmit:handleSubmit.bind(this)} , 
-        React.DOM.input( {type:"submit", value:"Post", id:"post-button"}),
-        React.DOM.input( {type:"text", placeholder:"command..", ref:"text", id:"post-text"})
-        ));
+        <form id='execute-form' onSubmit={handleSubmit.bind(this)} >
+        <button type='submit' id='addC-button' ><img src='../img/tab-new.png' alt='connect' /> </ button>
+        <input type='text' placeholder='id..' ref='text' id='addC-text'/>
+        </form>);
     }
   });
 }());

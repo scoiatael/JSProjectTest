@@ -15,6 +15,7 @@ var extensions = [];
 var tabber;
 var messageDisplay;
 var executionForm;
+var addConnection;
 
 try {
   _ = require('underscore');
@@ -31,6 +32,7 @@ try {
   tabber = require('./tabber.js');
   messageDisplay = require('./messageDisplay.js');
   executionForm = require('./executionForm.js');
+  addConnection = require('./addConnection.js');
 } catch(err) {
   /**
    * sth
@@ -55,6 +57,10 @@ var connectionManager = React.createClass({
     this.newMessage(['$ ' + text, 
                      '-> ' + return_text]); 
    },
+  addConnection : function(id) {
+    this.state.connection.connect(id);
+    this.pushToErrors('connecting to ' + id.toString());
+  },
   handleData : function (id, text) {
     if(Message.is_message(text)) {
       this.newMessage(id.toString() + ' : ' + Message.get_message(text));
@@ -97,6 +103,7 @@ var connectionManager = React.createClass({
       <div id = 'main'>
         <div><h2>{this.getName()}</h2>
         </div>
+          <addConnection execute ={this.addConnection} /> 
           <tabber active={this.state.clicked} onClick={this.handleClick} items={this.generateTabs()} /> 
         <div>
           <div id='message-box'>
