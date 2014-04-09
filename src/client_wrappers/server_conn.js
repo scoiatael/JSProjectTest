@@ -53,7 +53,7 @@ function makeClientConnection(obj) {
     },
     on_create : function () {
       if(_.has(obj, 'on_create')) {
-        obj.on_close.apply(this, arguments);
+        obj.on_create.apply(this, arguments);
       }
       startCheckingForServer();
       startCheckingPeers();
