@@ -46,6 +46,17 @@ function makeClientConnection(obj) {
         return function () { return str; };
       }
 
+      function checkExtensions (command, prettify) {
+        var c = _.first(command);
+        if(_.has(client, c) {
+          var r = client[c](_.rest(command));
+          if(typeof prettify === 'function') {
+            r = prettify(r);
+          }
+          return r;
+        }
+      };
+
       function execute (string_command) {
         var command = string_command.split(' ');
         var ret = null;
@@ -61,12 +72,14 @@ function makeClientConnection(obj) {
         ret = ret || bindCommandFunction(command, 'destroy', client.destroy, constString("Bye!"));
         ret = ret || bindCommandFunction(command, 'closec', client.close);
         ret = ret || bindCommandFunction(command, 'id', client.get_id);
+        ret = ret || checkExtensions(command);
         ret = ret || ('Unknown command: ' + string_command);
         return ret;
       }
 
       function accVals () {
-        return [ 'sendto', 'connecto', 'list', 'destroy', 'closec', 'id' ];
+        return [ 'sendto', 'connecto', 'list', 'destroy', 'closec', 'id' ] + 
+          _.chain(_.keys(client)).filter(_.isFunction).value();
       }
 
       return _.extend(client, {execute : execute, accepted_values : accVals});

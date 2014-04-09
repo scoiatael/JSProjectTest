@@ -22,6 +22,7 @@ try {
 }
 
 var startServer = function () { };
+var amServer = false;
 
 function makeClientConnection(obj) {
   var unload = false;
@@ -104,12 +105,19 @@ function makeClientConnection(obj) {
       startCheckingPeers();
       return _.extend(client, { 
         get_peers : function() { return knownPeers; },
-        request_peers : requestPeers });
+        request_peers : requestPeers, 
+        am_i_server : function () { return amServer; }
+      });
     }
   };
 }
 
 startServer = function (name) {
+  if(! amServer ) {
+    amServer = name;
+  } else {
+    amServer = [name] + amServer;
+  } 
   var conn = extend_client({
           base_opts: {
             id : name
