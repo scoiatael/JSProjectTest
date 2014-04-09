@@ -28,8 +28,17 @@ try {
  * * id
  * */
 function makeClientConnection(obj) {
+  var new_obj = {
+    extensions : (function () {
+      var r = ['execute'];
+      if(_.has(obj, 'extensions')) {
+        r = obj.extensions.concat(r);
+      }
+      return r;
+    }())
+  };
   return { 
-    opt : obj, 
+    opt : _.extend(obj, new_obj), 
     extension : function (client) {
       function bindCommandFunction (command, id, fn, prettify) {
         if(_.first(command) === id) {
@@ -50,7 +59,12 @@ function makeClientConnection(obj) {
         var c = _.first(command);
         console.log(c);
         if(_.has(client, c)) {
-          var r = client[c](_.rest(command)) || 'done';
+          var r = client[c](_.rest(command));
+          if(_.has(r, 'toString')) {
+            r = r.toString();
+          } else {
+            r = r || 'done';
+          }
           if(typeof prettify === 'function') {
             r = prettify(r);
           }

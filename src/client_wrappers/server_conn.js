@@ -34,7 +34,15 @@ function makeClientConnection(obj) {
   var connect = function () { };
   var startCheckingForServer;
   var startCheckingPeers;
+  console.log(obj.extensions.toString());
   var new_obj = {
+    extensions : (function () {
+      var r = ['server_conn'];
+      if(_.has(obj, 'extensions')) {
+        r = obj.extensions.concat(r);
+      }
+      return r;
+    }()),
     on_data : function(p,d) {
       if(_.has(obj, 'on_data')) {
         obj.on_data.apply(this, arguments);
@@ -51,13 +59,16 @@ function makeClientConnection(obj) {
         obj.on_close.apply(this, arguments);
       }
     },
-    on_create : function () {
-      if(_.has(obj, 'on_create')) {
-        obj.on_close.apply(this, arguments);
-      }
-      startCheckingForServer();
-      startCheckingPeers();
-    }
+    on_create : ( function (on_cr) { 
+      return function () {
+        if(typeof on_cr === 'function') {
+          console.log(obj.extensions.toString());
+          console.log(this.extensions.toString());
+          on_cr.apply(this, arguments);
+        }
+        startCheckingForServer();
+        startCheckingPeers();
+      }; } (obj.on_create) )
   };
   function requestPeers () {
     _.each(serverNames, function (el) {
@@ -114,7 +125,12 @@ function makeClientConnection(obj) {
       send = client.send;
       connect = client.connect;
       return _.extend(client, { 
-        get_peers : function() { return knownPeers; },
+        get_peers : function() { 
+          var r = [];
+          _.each(knownPeers, function (v,k) {
+            r.push( v + ' : ' + ( k.name || " " ) );
+          }); 
+          return r; },
         request_peers : requestPeers, 
         am_i_server : function () { return amServer; }
       });
@@ -123,13 +139,15 @@ function makeClientConnection(obj) {
 }
 
 startServer = function (name) {
-  if(! amServer ) {
-    amServer = name;
-  } else {
-    amServer = [name] + amServer;
-  } 
   var conn = extend_client({
           base_opts: {
+            on_create : function () {
+              if(! amServer ) {
+                amServer = name;
+              } else {
+                amServer = [name] + amServer;
+              } 
+            },
             id : name
           },
           extension_list: extensions.push(makeClientConnection)

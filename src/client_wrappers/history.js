@@ -20,6 +20,13 @@ function makeClientConnection(obj) {
   var info = {};
   var is_connected = function() { return false;};
   var new_obj = {
+    extensions : (function () {
+      var r = ['history'];
+      if(_.has(obj, 'extensions')) {
+        r = obj.extensions.concat(r);
+      }
+      return r;
+    }()),
     on_data : function(p,d) {
       if(_.has(obj, 'on_data')) {
         obj.on_data.apply(this, arguments);

@@ -21,6 +21,13 @@ function makeClientConnection(obj) {
   var send = function () { };
   var myMeta = {};
   var new_obj = {
+    extensions : (function () {
+      var r = ['metadata'];
+      if(_.has(obj, 'extensions')) {
+        r = obj.extensions.concat(r);
+      }
+      return r;
+    }()),
     on_data : function(p,d) {
       if(_.has(obj, 'on_data')) {
         obj.on_data.apply(this, arguments);
@@ -53,6 +60,9 @@ function makeClientConnection(obj) {
       }
     },
     on_open : function (p) {
+      if(_.has(obj, 'on_open')) {
+        obj.on_open.apply(this, arguments);
+      }
       send(p, { type : 'metadata', metadata : myMeta });
     }
   };

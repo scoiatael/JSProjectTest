@@ -20,6 +20,13 @@ function makeClientConnection(obj) {
   var send;
   var pending_connections = [];
   var new_obj = {
+    extensions : (function () {
+      var r = ['check_status'];
+      if(_.has(obj, 'extensions')) {
+        r = obj.extensions.concat(r);
+      }
+      return r;
+    }()),
     on_open : function() {
       if(_.has(obj, 'on_open')) {
         obj.on_open.apply(this, arguments);
