@@ -10,7 +10,7 @@ var common;
 try {
   _ = require('underscore'); 
  Message = require('../message.js'); 
-  common = require('./common.js');
+  common = require('../common.js');
 } catch(err) {
   /**
    * sth

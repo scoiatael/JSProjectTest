@@ -27,7 +27,7 @@ function check(obj, list) {
 }
 
 function extend(dest, source) {
-  _.extend({}, dest, source);
+  return _.extend({}, dest, source);
 }
 
 module.exports = { check_for_properties : check, log_error : logError, extend : extend };

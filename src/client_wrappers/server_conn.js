@@ -15,7 +15,7 @@ try {
   extensions = [
       require('../client_wrappers/metadata.js'), 
         ];
-  common = require('./common.js');
+  common = require('../common.js');
 } catch(err) {
   /**
    * sth
@@ -61,16 +61,15 @@ function makeClientConnection(obj) {
         obj.on_close.apply(this, arguments);
       }
     },
-    on_create : ( function (on_cr) { 
-      return function () {
-        if(typeof on_cr === 'function') {
-          console.log(obj.extensions.toString());
-          console.log(this.extensions.toString());
-          on_cr.apply(this, arguments);
-        }
-        startCheckingForServer();
-        startCheckingPeers();
-      }; } (obj.on_create) )
+    on_create : function () {
+      if(_.has(obj, 'on_create')) {
+        console.log(obj.extensions.toString());
+        console.log(this.extensions.toString());
+        obj.on_create.apply(this, arguments);
+      }
+      startCheckingForServer();
+      startCheckingPeers();
+    }
   };
   function requestPeers () {
     _.each(serverNames, function (el) {

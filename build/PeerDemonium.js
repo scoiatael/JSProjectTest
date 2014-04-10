@@ -18449,9 +18449,11 @@ module.exports = clientExtend;
  * */
 var _;
 var makeClient;
+var common;
 
 try {
   _ = require('underscore'); 
+  common = require('../common.js');
 } catch(err) {
   /**
    * sth
@@ -18470,7 +18472,7 @@ function makeClientConnection(obj) {
     }()),
   };
   return {
-    opt : _.extend(obj, new_obj),
+    opt : common.extend(obj, new_obj),
     extension : function(client) {
       function comp (str) {
         return _.reduce(client.get_list(), function (memo, val, key) {
@@ -18486,7 +18488,7 @@ function makeClientConnection(obj) {
 
 module.exports = makeClientConnection;
 
-},{"underscore":133}],138:[function(require,module,exports){
+},{"../common.js":142,"underscore":133}],138:[function(require,module,exports){
 /**
  * execute.js
  * Łukasz Czapliński, ii.uni.wroc.pl
@@ -18494,9 +18496,11 @@ module.exports = makeClientConnection;
  * */
 var _;
 var makeClient;
+var common;
 
 try {
   _ = require('underscore'); 
+  common = require('../common.js');
 } catch(err) {
   /**
    * sth
@@ -18527,7 +18531,7 @@ function makeClientConnection(obj) {
     }())
   };
   return { 
-    opt : _.extend(obj, new_obj), 
+    opt : common.extend(obj, new_obj), 
     extension : function (client) {
       function bindCommandFunction (command, id, fn, prettify) {
         if(_.first(command) === id) {
@@ -18610,7 +18614,7 @@ module.exports = makeClientConnection;
           }())
           */
 
-},{"underscore":133}],139:[function(require,module,exports){
+},{"../common.js":142,"underscore":133}],139:[function(require,module,exports){
 /**
  * history.js
  * Łukasz Czapliński, ii.uni.wroc.pl
@@ -18618,10 +18622,12 @@ module.exports = makeClientConnection;
  * */
 var _;
 var Message;
+var common;
 
 try {
   _ = require('underscore'); 
  Message = require('../message.js'); 
+  common = require('../common.js');
 } catch(err) {
   /**
    * sth
@@ -18671,7 +18677,7 @@ function makeClientConnection(obj) {
     }
   }
   return {
-    opt : _.extend(obj, new_obj),
+    opt : common.extend(obj, new_obj),
     extension : function(client) {
       is_connected = client.is_connected;
       return _.extend(client, { get_history : getHist });
@@ -18681,16 +18687,18 @@ function makeClientConnection(obj) {
 
 module.exports = makeClientConnection;
 
-},{"../message.js":146,"underscore":133}],140:[function(require,module,exports){
+},{"../common.js":142,"../message.js":146,"underscore":133}],140:[function(require,module,exports){
 /**
  * metadata.js
  * Łukasz Czapliński, ii.uni.wroc.pl
  * 18-03-2014
  * */
 var _;
+var common;
 
 try {
   _ = require('underscore'); 
+  common = require('../common.js');
 } catch(err) {
   /**
    * sth
@@ -18762,7 +18770,7 @@ function makeClientConnection(obj) {
     });
   }
   return {
-    opt : _.extend(obj, new_obj),
+    opt : common.extend(obj, new_obj),
     extension : function(client) {
       send = client.send;
       get_list = client.get_list;
@@ -18778,7 +18786,7 @@ function makeClientConnection(obj) {
 
 module.exports = makeClientConnection;
 
-},{"underscore":133}],141:[function(require,module,exports){
+},{"../common.js":142,"underscore":133}],141:[function(require,module,exports){
 /**
  * server_conn.js
  * Łukasz Czapliński, ii.uni.wroc.pl
@@ -18788,6 +18796,7 @@ module.exports = makeClientConnection;
 var _;
 var extend_client;
 var extensions = [];
+var common;
 
 try {
   _ = require('underscore'); 
@@ -18795,6 +18804,7 @@ try {
   extensions = [
       require('../client_wrappers/metadata.js'), 
         ];
+  common = require('../common.js');
 } catch(err) {
   /**
    * sth
@@ -18840,16 +18850,15 @@ function makeClientConnection(obj) {
         obj.on_close.apply(this, arguments);
       }
     },
-    on_create : ( function (on_cr) { 
-      return function () {
-        if(typeof on_cr === 'function') {
-          console.log(obj.extensions.toString());
-          console.log(this.extensions.toString());
-          on_cr.apply(this, arguments);
-        }
-        startCheckingForServer();
-        startCheckingPeers();
-      }; } (obj.on_create) )
+    on_create : function () {
+      if(_.has(obj, 'on_create')) {
+        console.log(obj.extensions.toString());
+        console.log(this.extensions.toString());
+        obj.on_create.apply(this, arguments);
+      }
+      startCheckingForServer();
+      startCheckingPeers();
+    }
   };
   function requestPeers () {
     _.each(serverNames, function (el) {
@@ -18887,7 +18896,7 @@ function makeClientConnection(obj) {
     unload = true;
   });
   return {
-    opt : _.extend(obj, new_obj),
+    opt : common.extend(obj, new_obj),
     extension : function(client) {
       get_list = function () {
         var list = client.get_list();
@@ -18940,7 +18949,7 @@ startServer = function (name) {
 
 module.exports = makeClientConnection;
 
-},{"../clientWrapper.js":136,"../client_wrappers/metadata.js":140,"underscore":133}],142:[function(require,module,exports){
+},{"../clientWrapper.js":136,"../client_wrappers/metadata.js":140,"../common.js":142,"underscore":133}],142:[function(require,module,exports){
 /**
  * common.js
  * Łukasz Czapliński, ii.uni.wroc.pl
@@ -18969,7 +18978,11 @@ function check(obj, list) {
   }, true);
 }
 
-module.exports = { check_for_properties : check, log_error : logError };
+function extend(dest, source) {
+  return _.extend({}, dest, source);
+}
+
+module.exports = { check_for_properties : check, log_error : logError, extend : extend };
 
 },{"underscore":133}],143:[function(require,module,exports){
 /** @jsx React.DOM */
