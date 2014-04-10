@@ -5,9 +5,11 @@
  * */
 var _;
 var makeClient;
+var common;
 
 try {
   _ = require('underscore'); 
+  common = require('./common.js');
 } catch(err) {
   /**
    * sth
@@ -48,7 +50,7 @@ function makeClientConnection(obj) {
     }
   };
   return {
-    opt : _.extend(obj, new_obj),
+    opt : common.extend(obj, new_obj),
     extension : function(client) {
       function check_connections () {
         _.each(pending_connections, function (val, key) {

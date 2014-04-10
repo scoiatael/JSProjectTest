@@ -5,9 +5,11 @@
  * */
 var _;
 var makeClient;
+var common;
 
 try {
   _ = require('underscore'); 
+  common = require('../common.js');
 } catch(err) {
   /**
    * sth
@@ -26,7 +28,7 @@ function makeClientConnection(obj) {
     }()),
   };
   return {
-    opt : _.extend(obj, new_obj),
+    opt : common.extend(obj, new_obj),
     extension : function(client) {
       function comp (str) {
         return _.reduce(client.get_list(), function (memo, val, key) {

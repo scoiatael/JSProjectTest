@@ -7,6 +7,7 @@
 var _;
 var extend_client;
 var extensions = [];
+var common;
 
 try {
   _ = require('underscore'); 
@@ -14,6 +15,7 @@ try {
   extensions = [
       require('../client_wrappers/metadata.js'), 
         ];
+  common = require('./common.js');
 } catch(err) {
   /**
    * sth
@@ -106,7 +108,7 @@ function makeClientConnection(obj) {
     unload = true;
   });
   return {
-    opt : _.extend(obj, new_obj),
+    opt : common.extend(obj, new_obj),
     extension : function(client) {
       get_list = function () {
         var list = client.get_list();

@@ -4,9 +4,11 @@
  * 18-03-2014
  * */
 var _;
+var common;
 
 try {
   _ = require('underscore'); 
+  common = require('./common.js');
 } catch(err) {
   /**
    * sth
@@ -78,7 +80,7 @@ function makeClientConnection(obj) {
     });
   }
   return {
-    opt : _.extend(obj, new_obj),
+    opt : common.extend(obj, new_obj),
     extension : function(client) {
       send = client.send;
       get_list = client.get_list;

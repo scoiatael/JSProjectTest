@@ -5,10 +5,12 @@
  * */
 var _;
 var Message;
+var common;
 
 try {
   _ = require('underscore'); 
  Message = require('../message.js'); 
+  common = require('./common.js');
 } catch(err) {
   /**
    * sth
@@ -58,7 +60,7 @@ function makeClientConnection(obj) {
     }
   }
   return {
-    opt : _.extend(obj, new_obj),
+    opt : common.extend(obj, new_obj),
     extension : function(client) {
       is_connected = client.is_connected;
       return _.extend(client, { get_history : getHist });
