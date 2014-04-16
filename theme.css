@@ -5,6 +5,13 @@
   overflow:scroll;
 }
 
+#commands {
+  width:600px;
+  height:100px;
+  background:#DDD;
+  overflow:scroll;
+}
+
 #errors {
   width:200px;
   height:200px;
@@ -17,6 +24,10 @@
 }
 
 #message-box {
+  float:left;
+}
+
+#command-box {
   float:left;
 }
 

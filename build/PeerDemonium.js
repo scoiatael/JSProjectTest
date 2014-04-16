@@ -18553,7 +18553,7 @@ function makeClientConnection(obj) {
         console.log(c);
         if(_.has(client, c)) {
           var r = client[c](_.rest(command));
-          if(_.has(r, 'toString')) {
+          if((! _.isUndefined(r)) && _.has(r, 'toString')) {
             r = r.toString();
           } else {
             r = r || 'done';
@@ -18576,6 +18576,16 @@ function makeClientConnection(obj) {
           return receiver + ' : ' + message; });
         ret = ret || bindCommandFunction(command, 'connecto', client.connect, 
             constString('connecting to ' + _.chain(command).rest().first().value()));
+        ret = ret || bindCommandFunction(command, 'getp', client.get_peers, function (obj) {
+          var str = [];
+          _.each(obj, function (v,k) {
+            str.push(v + ': ' + (k.name || " "));
+          });
+          if(str.length() === 0) {
+            str = 'None';
+          }
+          return str.toString();
+        });
         ret = ret || bindCommandFunction(command, 'list', client.get_list);
         ret = ret || bindCommandFunction(command, 'destroy', client.destroy, constString("Bye!"));
         ret = ret || bindCommandFunction(command, 'closec', client.close);
@@ -18916,11 +18926,12 @@ function makeClientConnection(obj) {
       connect = client.connect;
       return _.extend(client, { 
         get_peers : function() { 
-          var r = [];
+          /*var r = [];
           _.each(knownPeers, function (v,k) {
             r.push( v + ' : ' + ( k.name || " " ) );
           }); 
-          return r; },
+          return r;*/
+          return knownPeers; },
         request_peers : requestPeers, 
         am_i_server : function () { return amServer; }
       });
@@ -19105,14 +19116,19 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
   },
   execute : function (text) {
     var return_text = this.state.connection.execute(text);
-    this.newMessage(['$ ' + text, 
+    this.pushToCommands(['$ ' + text, 
                      '-> ' + return_text]); 
    },
+  send : function ( text ) {
+    var return_text = this.state.connection.send(this.activePeer(),text);
+    this.newMessage('-> ' + text);
+  },
   addConnection : function(id) {
     this.state.connection.connect(id);
     this.pushToErrors('connecting to ' + id.toString());
   },
   handleData : function (id, text) {
+    this.pushToCommands(id.toString() + ' : ' + Message.get_message(text));
     if(Message.is_message(text)) {
       this.newMessage(id.toString() + ' : ' + Message.get_message(text));
     }
@@ -19122,6 +19138,13 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
     nerrors.push(text);
     if(this.isMounted()) { 
       this.setState({ errors : nerrors  });
+    }
+  },
+  pushToCommands : function (text) {
+    var nerrors = this.state.commands;
+    nerrors.push(text);
+    if(this.isMounted()) { 
+      this.setState({ commands : nerrors  });
     }
   },
   handleError : function (err) {
@@ -19159,9 +19182,13 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
         React.DOM.div(null, 
           React.DOM.div( {id:"message-box"}, 
             messageDisplay( {messages:this.state.messages, name:"messages"}), 
-            executionForm( {execute: this.execute, getSuggestions:this.state.connection.complete} ) 
+            executionForm( {execute: this.send, getSuggestions:this.state.connection.complete} ) 
           ),
             messageDisplay( {messages:this.state.errors, name:"errors"} ) 
+        ),
+        React.DOM.div( {id:"command-box"}, 
+          messageDisplay( {messages:this.state.commands, name:"commands"}), 
+          executionForm( {execute: this.execute, getSuggestions:this.state.connection.complete} ) 
         )
       )
       );
@@ -19170,7 +19197,8 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
     return { 
       messages : [],
       errors : [],
-      clicked : 0
+      clicked : 0,
+      commands : []
     };
   },
   componentWillMount : function () {

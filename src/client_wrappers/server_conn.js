@@ -127,11 +127,12 @@ function makeClientConnection(obj) {
       connect = client.connect;
       return _.extend(client, { 
         get_peers : function() { 
-          var r = [];
+          /*var r = [];
           _.each(knownPeers, function (v,k) {
             r.push( v + ' : ' + ( k.name || " " ) );
           }); 
-          return r; },
+          return r;*/
+          return knownPeers; },
         request_peers : requestPeers, 
         am_i_server : function () { return amServer; }
       });

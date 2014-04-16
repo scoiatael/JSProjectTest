@@ -62,7 +62,7 @@ function makeClientConnection(obj) {
         console.log(c);
         if(_.has(client, c)) {
           var r = client[c](_.rest(command));
-          if(_.has(r, 'toString')) {
+          if((! _.isUndefined(r)) && _.has(r, 'toString')) {
             r = r.toString();
           } else {
             r = r || 'done';
@@ -85,6 +85,16 @@ function makeClientConnection(obj) {
           return receiver + ' : ' + message; });
         ret = ret || bindCommandFunction(command, 'connecto', client.connect, 
             constString('connecting to ' + _.chain(command).rest().first().value()));
+        ret = ret || bindCommandFunction(command, 'getp', client.get_peers, function (obj) {
+          var str = [];
+          _.each(obj, function (v,k) {
+            str.push(v + ': ' + (k.name || " "));
+          });
+          if(str.length() === 0) {
+            str = 'None';
+          }
+          return str.toString();
+        });
         ret = ret || bindCommandFunction(command, 'list', client.get_list);
         ret = ret || bindCommandFunction(command, 'destroy', client.destroy, constString("Bye!"));
         ret = ret || bindCommandFunction(command, 'closec', client.close);

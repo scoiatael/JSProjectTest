@@ -54,14 +54,19 @@ var connectionManager = React.createClass({
   },
   execute : function (text) {
     var return_text = this.state.connection.execute(text);
-    this.newMessage(['$ ' + text, 
+    this.pushToCommands(['$ ' + text, 
                      '-> ' + return_text]); 
    },
+  send : function ( text ) {
+    var return_text = this.state.connection.send(this.activePeer(),text);
+    this.newMessage('-> ' + text);
+  },
   addConnection : function(id) {
     this.state.connection.connect(id);
     this.pushToErrors('connecting to ' + id.toString());
   },
   handleData : function (id, text) {
+    this.pushToCommands(id.toString() + ' : ' + Message.get_message(text));
     if(Message.is_message(text)) {
       this.newMessage(id.toString() + ' : ' + Message.get_message(text));
     }
@@ -71,6 +76,13 @@ var connectionManager = React.createClass({
     nerrors.push(text);
     if(this.isMounted()) { 
       this.setState({ errors : nerrors  });
+    }
+  },
+  pushToCommands : function (text) {
+    var nerrors = this.state.commands;
+    nerrors.push(text);
+    if(this.isMounted()) { 
+      this.setState({ commands : nerrors  });
     }
   },
   handleError : function (err) {
@@ -108,9 +120,13 @@ var connectionManager = React.createClass({
         <div>
           <div id='message-box'>
             <messageDisplay messages={this.state.messages} name='messages'/> 
-            <executionForm execute ={this.execute} getSuggestions={this.state.connection.complete} /> 
+            <executionForm execute ={this.send} getSuggestions={this.state.connection.complete} /> 
           </div>
             <messageDisplay messages={this.state.errors} name='errors' /> 
+        </div>
+        <div id='command-box'>
+          <messageDisplay messages={this.state.commands} name='commands'/> 
+          <executionForm execute ={this.execute} getSuggestions={this.state.connection.complete} /> 
         </div>
       </div>
       );
@@ -119,7 +135,8 @@ var connectionManager = React.createClass({
     return { 
       messages : [],
       errors : [],
-      clicked : 0
+      clicked : 0,
+      commands : []
     };
   },
   componentWillMount : function () {
