@@ -78,7 +78,7 @@ function makeClientConnection(obj)
       if(_.has(obj, 'on_create')) {
         obj.on_create.apply(this, arguments);
       }
-    //  _.delay(startCheckingForServer, 500);
+      _.delay(startCheckingForServer, 500);
       _.delay(startCheckingPeers, 500);
     }
   };
@@ -100,9 +100,9 @@ function makeClientConnection(obj)
           if(! is_conn(p)) {
             startServer(p);
           }
-        }, 1000);
+        }, 5000);
       } else {
-        if(! ( is_conn(p) || _.contains(amServer, p))) {
+        if(! ( is_conn(p) )) {
           connect(p);
           console.log('no connection to ' + p + ', reconnecting');
         }
@@ -154,7 +154,16 @@ function makeClientConnection(obj)
       };
       send = client.send;
       connect = client.connect;
-      is_conn = client.is_connected;
+      is_conn = function (k) { 
+        // Why does it sometimes return value for server instead of client?
+        var v1 = client.is_connected(k);
+        var v2 = _.contains(client.get_list(), k);
+        console.log(client.get_list());
+        if(v1 != v2) {
+         console.log('mismatch');
+        }
+       return v1 || v2 ;
+      }; 
       return _.extend(client, {
         get_peers : function()
         {
