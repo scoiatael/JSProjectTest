@@ -62,10 +62,12 @@ function makeClientConnection(obj)
         obj.on_data.apply(this, arguments);
       }
       if(_.has(d, 'type') && d.type === 'peer_update') {
-        _.extend(reliablePeers, d.ids);
+        console.log('got peer update from ' + p);
+        console.log(d);
+        _.extend(knownPeers, d.ids);
       }
       if(_.has(d, 'type') && d.type === 'peer_request') {
-        send(p, {type : 'peer_update', ids : knownPeers });
+        send(p, {type : 'peer_update', ids : reliablePeers });
       }
     },
     on_close : function ()
@@ -79,7 +81,7 @@ function makeClientConnection(obj)
       if(_.has(obj, 'on_create')) {
         obj.on_create.apply(this, arguments);
       }
-      _.delay(startCheckingForServer, 500);
+    //  _.delay(startCheckingForServer, 500);
       _.delay(startCheckingPeers, 500);
     }
   };
@@ -120,17 +122,15 @@ function makeClientConnection(obj)
     }
   };
   startCheckingPeers = (function() {
-    var req = _.throttle(requestPeers, 5000);
     return function () {
-      knownPeers = _.extend({}, reliablePeers);
-      _.each(get_list(), function(v) {
-        var o = {};
-        o[v] = get_meta(v);
-        _.extend(reliablePeers, o);
+      knownPeers = reliablePeers;
+      reliablePeers = {};
+      _.each(get_list(), function(v,k) {
+        reliablePeers[k] = v;
       });
       if(!unload) {
-        req();
-        setTimeout(startCheckingPeers, 1000);
+        requestPeers();
+        setTimeout(startCheckingPeers, 10000);
       }
     };
   }());
@@ -146,11 +146,11 @@ function makeClientConnection(obj)
         var obj = {};
         if(_.has(client, 'get_meta')) {
           _.each(list, function (el, k) {
-            obj[k] = client.get_meta(el);
+            obj[el] = client.get_meta(el);
           });
         } else {
-          _.each(list, function (el, k) {
-            obj[k] = {};
+          _.each(list, function (el) {
+            obj[el] = {};
           });
         }
         return obj;
@@ -175,6 +175,12 @@ function makeClientConnection(obj)
         am_i_server : function ()
         {
           return amServer;
+        },
+        start_server : startServer,
+        reliable_peers : function () 
+        {
+          console.log(reliablePeers);
+          return reliablePeers;
         }
       });
     }

@@ -73,6 +73,13 @@ function makeClientConnection(obj) {
           return r;
         }
       }
+      function accVals () {
+        return _.reduce([ 'sendto', 'connecto', 'list', 'destroy', 'closec', 'id', ].concat(
+          _.chain(_.keys(client)).value()), function (base, val) {
+            return val + ', ' + base;
+          }, "");
+      }
+
 
       function execute (string_command) {
         var command = string_command.split(' ');
@@ -87,16 +94,18 @@ function makeClientConnection(obj) {
             constString('connecting to ' + _.chain(command).rest().first().value()));
         ret = ret || bindCommandFunction(command, 'getp', client.get_peers, function (obj) {
           var str = "";
+          console.log('Got: ');
+          console.log(obj);
           _.each(obj, function (v,k) {
             str = str.concat(k + ': ' + (v.name || ' '));
           });
-          console.log(obj);
           console.log(str);
           return str || 'None';
         });
         ret = ret || bindCommandFunction(command, 'list', client.get_list);
         ret = ret || bindCommandFunction(command, 'destroy', client.destroy, constString("Bye!"));
         ret = ret || bindCommandFunction(command, 'closec', client.close);
+        ret = ret || bindCommandFunction(command, 'help', accVals);
         if(_.has(client, 'set_metadata')) {
           ret = ret || bindCommandFunction(command, 'name', function (name) {
             client.set_metadata(_.extend(client.my_metadata(), { name : name }));
@@ -107,13 +116,6 @@ function makeClientConnection(obj) {
         ret = ret || checkExtensions(command);
         ret = ret || ('Unknown command: ' + string_command);
         return ret;
-      }
-
-      function accVals () {
-        return _.reduce([ 'sendto', 'connecto', 'list', 'destroy', 'closec', 'id', ].concat(
-          _.chain(_.keys(client)).value()), function (base, val) {
-            return val + ', ' + base;
-          }, "");
       }
 
       return _.extend(client, {execute : execute, accepted_values : accVals});

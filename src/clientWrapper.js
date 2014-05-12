@@ -22,7 +22,6 @@ function clientExtend (obj) {
   var opt = obj.base_opts;
   var list = obj.extension_list;
   return (function extend() {
-    console.log('Extending client with ' + list.length + ' extensions');
     var fs = [];
     var opts = _.reduce(list, function (memo, item) {
       if(typeof item !== 'function') {
@@ -33,9 +32,6 @@ function clientExtend (obj) {
       fs.push(r.extension);
       return r.opt;
     }, opt);
-    if(_.has(opts, 'extensions')) {
-      console.log('Used client extensions: ' + opts.extensions);
-    }
     return _.reduce(fs, function (memo, item) {
       return item(memo); 
     }, client(opts)); 
