@@ -66,7 +66,6 @@ var connectionManager = React.createClass({
     this.pushToErrors('connecting to ' + id.toString());
   },
   handleData : function (id, text) {
-    this.pushToCommands(id.toString() + ' : ' + Message.get_message(text));
     if(Message.is_message(text)) {
       this.newMessage(id.toString() + ' : ' + Message.get_message(text));
     }
@@ -89,7 +88,7 @@ var connectionManager = React.createClass({
     this.pushToErrors('(' + err.name + ') ' + err.message);
   },
   activePeer : function(i) {
-    return this.state.connection.get_list()[i];
+    return this.state.connection.get_list()[i || this.state.clicked];
   },
   handleClick : function (i) {
     this.state.clicked = i;

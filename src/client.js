@@ -99,7 +99,8 @@ function makeClient (obj) {
       /**
        * bad things happened
        * */
-      forwardError(new Error('Unexpected happened'));
+      forwardError(new Error(conn.peer + ' is already connected!'));
+      connections[conn.peer].close();
     }
     conn.on('open', function () {
       if(! quiet) {
@@ -119,6 +120,12 @@ function makeClient (obj) {
     }
   };
   sendTo = function(id, what) {
+    var whatStr = "";
+    if(_.isObject(what)) {
+      whatStr = what.type || what.toString();
+    }
+    console.log('sending ' + whatStr + ' to ' + id);
+    console.log(what);
     sanityCheck();
     var done = false;
     if(_.has(connections, id)) {
@@ -133,7 +140,8 @@ function makeClient (obj) {
     if(_.has(obj, 'on_data')){
       obj.on_data(who, what);
     } else {
-      console.log('got ' + what.toString() + ' from ' + who.toString());
+      console.log('got sth from ' + who.toString());
+      console.log(what);
     }
     if(what === leaveMsg) {
       closeConnection(who);

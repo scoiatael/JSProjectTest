@@ -31,7 +31,6 @@ var tabber = (function () {
     return ret;
   }
   function createButton(item, i) {
-    console.log('creating button ' + i.toString());
     return (
       <button className='tabber-tab'
               data-active={isButtonActive.call(this, i)}

@@ -86,14 +86,13 @@ function makeClientConnection(obj) {
         ret = ret || bindCommandFunction(command, 'connecto', client.connect, 
             constString('connecting to ' + _.chain(command).rest().first().value()));
         ret = ret || bindCommandFunction(command, 'getp', client.get_peers, function (obj) {
-          var str = [];
+          var str = "";
           _.each(obj, function (v,k) {
-            str.push(v + ': ' + (k.name || " "));
+            str = str.concat(k + ': ' + (v.name || ' '));
           });
-          if(str.length() === 0) {
-            str = 'None';
-          }
-          return str.toString();
+          console.log(obj);
+          console.log(str);
+          return str || 'None';
         });
         ret = ret || bindCommandFunction(command, 'list', client.get_list);
         ret = ret || bindCommandFunction(command, 'destroy', client.destroy, constString("Bye!"));

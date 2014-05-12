@@ -6,46 +6,58 @@
 /*global window*/
 var _;
 var extend_client;
-var extensions = [];
+var server_extensions = [];
 var common;
 
-try {
-  _ = require('underscore'); 
+try
+{
+  _ = require('underscore');
   extend_client = require('../clientWrapper.js');
-  extensions = [
-      require('../client_wrappers/metadata.js'), 
-        ];
+  server_extensions = [
+                        require('../client_wrappers/metadata.js')
+                      ];
   common = require('../common.js');
-} catch(err) {
+} catch(err)
+{
   /**
    * sth
-   **/ 
+   **/
   console.error(err);
 }
 
 var startServer = function () { };
 var amServer = false;
 
-function makeClientConnection(obj) {
+function makeClientConnection(obj)
+{
   var unload = false;
   var serverNames = ["server-0"];
   var knownPeers = {};
   var reliablePeers = {};
   var send = function () { };
-  var get_list = function () { return {}; };
+  var get_list = function () {
+    return {};
+  };
+  var get_meta = function () {
+    return {};
+  };
+  var is_conn = function () {
+    return false;
+  };
   var connect = function () { };
   var startCheckingForServer;
   var startCheckingPeers;
-  console.log(obj.extensions.toString());
   var new_obj = {
-    extensions : (function () {
+    extensions : (function ()
+    {
       var r = ['server_conn'];
       if(_.has(obj, 'extensions')) {
         r = obj.extensions.concat(r);
       }
       return r;
     }()),
-    on_data : function(p,d) {
+    on_data : function(p, d)
+    {
       if(_.has(obj, 'on_data')) {
         obj.on_data.apply(this, arguments);
       }
@@ -56,24 +68,26 @@ function makeClientConnection(obj) {
         send(p, {type : 'peer_update', ids : knownPeers });
       }
     },
-    on_close : function () {
+    on_close : function ()
+    {
       if(_.has(obj, 'on_close')) {
         obj.on_close.apply(this, arguments);
       }
     },
-    on_create : function () {
+    on_create : function ()
+    {
       if(_.has(obj, 'on_create')) {
-        console.log(obj.extensions.toString());
-        console.log(this.extensions.toString());
         obj.on_create.apply(this, arguments);
       }
-      startCheckingForServer();
-      startCheckingPeers();
+      _.delay(startCheckingForServer, 500);
+      _.delay(startCheckingPeers, 500);
     }
   };
   function requestPeers () {
     _.each(serverNames, function (el) {
-      send(el, { type : 'peer_request' });
+      if(is_conn(el)) {
+        send(el, { type : 'peer_request' });
+      }
     });
   }
 
@@ -82,8 +96,17 @@ function makeClientConnection(obj) {
     return function(p) {
       if(! _.has(sentRequests, p)) {
         connect(p);
-        sentRequests[p] = {};
-        setTimeout(function () { if(! _.has(get_list(), p)) { startServer(p); }}, 1500);
+        sentRequests[p] = (new Date()).getTime();
+        setTimeout(function () {
+          if(! is_conn(p)) {
+            startServer(p);
+          }
+        }, 1000);
+      } else {
+        if(! ( is_conn(p) || _.contains(amServer, p))) {
+          connect(p);
+          console.log('no connection to ' + p + ', reconnecting');
+        }
       }
     };
   }());
@@ -93,22 +116,31 @@ function makeClientConnection(obj) {
       checkForServer(el);
     });
     if(!unload) {
-      setTimeout(startCheckingForServer, 1000);
+      setTimeout(startCheckingForServer, 3000);
     }
   };
-  startCheckingPeers = function () {
-    knownPeers = reliablePeers;
-    _.extend(reliablePeers, get_list());
-    if(!unload) {
-      setTimeout(startCheckingPeers, 500);
-    }
-  };
+  startCheckingPeers = (function() {
+    var req = _.throttle(requestPeers, 5000);
+    return function () {
+      knownPeers = _.extend({}, reliablePeers);
+      _.each(get_list(), function(v) {
+        var o = {};
+        o[v] = get_meta(v);
+        _.extend(reliablePeers, o);
+      });
+      if(!unload) {
+        req();
+        setTimeout(startCheckingPeers, 1000);
+      }
+    };
+  }());
   window.addEventListener('onbeforeunload', function () {
     unload = true;
   });
   return {
     opt : common.extend(obj, new_obj),
-    extension : function(client) {
+    extension : function(client)
+    {
       get_list = function () {
         var list = client.get_list();
         var obj = {};
@@ -125,34 +157,47 @@ function makeClientConnection(obj) {
       };
       send = client.send;
       connect = client.connect;
-      return _.extend(client, { 
-        get_peers : function() { 
+      if(_.has(client, 'get_metadata')) {
+        get_meta = client.get_metadata;
+      }
+      is_conn = client.is_connected;
+      return _.extend(client, {
+        get_peers : function()
+        {
           /*var r = [];
           _.each(knownPeers, function (v,k) {
             r.push( v + ' : ' + ( k.name || " " ) );
-          }); 
+          });
           return r;*/
-          return knownPeers; },
-        request_peers : requestPeers, 
-        am_i_server : function () { return amServer; }
+          return knownPeers;
+        },
+        request_peers : requestPeers,
+        am_i_server : function ()
+        {
+          return amServer;
+        }
       });
     }
   };
 }
 
-startServer = function (name) {
+startServer = function (name)
+{
+  console.log('starting server ' + name);
+  server_extensions.push(makeClientConnection);
   var conn = extend_client({
-          base_opts: {
-            on_create : function () {
-              if(! amServer ) {
-                amServer = name;
-              } else {
-                amServer = [name] + amServer;
-              } 
-            },
-            id : name
-          },
-          extension_list: extensions.push(makeClientConnection)
+    base_opts: {
+      on_create : function ()
+      {
+        if(! amServer ) {
+          amServer = [name];
+        } else {
+          amServer = amServer.push(name);
+        }
+      },
+      id : name
+    },
+    extension_list: server_extensions
   });
   window.addEventListener('onbeforeunload', function () {
     conn.destroy();
@@ -160,3 +205,4 @@ startServer = function (name) {
 };
 
 module.exports = makeClientConnection;
+

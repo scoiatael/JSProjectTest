@@ -3,22 +3,6 @@
 var rendering = require('./tmp/main.js');
 var _ = require('underscore');
 
-var nobj = (function (obj) {
-  var count = 0;
-  return {
-    run : function () {
-      if(_.has(obj, 'run')) {
-        count ++;
-        console.log('run ' + count.toString());
-        obj.run.apply(this, arguments);
-      }
-    }
-  };
-} ( { run : function () { console.log('base run'); } } ));
-
-nobj.run();
-
-
 rendering();
 
 },{"./tmp/main.js":145,"underscore":133}],2:[function(require,module,exports){
@@ -18306,7 +18290,8 @@ function makeClient (obj) {
       /**
        * bad things happened
        * */
-      forwardError(new Error('Unexpected happened'));
+      forwardError(new Error(conn.peer + ' is already connected!'));
+      connections[conn.peer].close();
     }
     conn.on('open', function () {
       if(! quiet) {
@@ -18326,6 +18311,12 @@ function makeClient (obj) {
     }
   };
   sendTo = function(id, what) {
+    var whatStr = "";
+    if(_.isObject(what)) {
+      whatStr = what.type || what.toString();
+    }
+    console.log('sending ' + whatStr + ' to ' + id);
+    console.log(what);
     sanityCheck();
     var done = false;
     if(_.has(connections, id)) {
@@ -18340,7 +18331,8 @@ function makeClient (obj) {
     if(_.has(obj, 'on_data')){
       obj.on_data(who, what);
     } else {
-      console.log('got ' + what.toString() + ' from ' + who.toString());
+      console.log('got sth from ' + who.toString());
+      console.log(what);
     }
     if(what === leaveMsg) {
       closeConnection(who);
@@ -18420,6 +18412,7 @@ function clientExtend (obj) {
   var opt = obj.base_opts;
   var list = obj.extension_list;
   return (function extend() {
+    console.log('Extending client with ' + list.length + ' extensions');
     var fs = [];
     var opts = _.reduce(list, function (memo, item) {
       if(typeof item !== 'function') {
@@ -18430,8 +18423,8 @@ function clientExtend (obj) {
       fs.push(r.extension);
       return r.opt;
     }, opt);
-    if(_.has(opt, 'extensions')) {
-      console.log('Used client extensions: ' + opt.extensions);
+    if(_.has(opts, 'extensions')) {
+      console.log('Used client extensions: ' + opts.extensions);
     }
     return _.reduce(fs, function (memo, item) {
       return item(memo); 
@@ -18577,14 +18570,13 @@ function makeClientConnection(obj) {
         ret = ret || bindCommandFunction(command, 'connecto', client.connect, 
             constString('connecting to ' + _.chain(command).rest().first().value()));
         ret = ret || bindCommandFunction(command, 'getp', client.get_peers, function (obj) {
-          var str = [];
+          var str = "";
           _.each(obj, function (v,k) {
-            str.push(v + ': ' + (k.name || " "));
+            str = str.concat(k + ': ' + (v.name || ' '));
           });
-          if(str.length() === 0) {
-            str = 'None';
-          }
-          return str.toString();
+          console.log(obj);
+          console.log(str);
+          return str || 'None';
         });
         ret = ret || bindCommandFunction(command, 'list', client.get_list);
         ret = ret || bindCommandFunction(command, 'destroy', client.destroy, constString("Bye!"));
@@ -18772,6 +18764,7 @@ function makeClientConnection(obj) {
     if(_.has(info, p)) {
       return info[p];
     }
+    return {};
   }
   function setMeta (newMeta) {
     myMeta = newMeta;
@@ -18805,46 +18798,58 @@ module.exports = makeClientConnection;
 /*global window*/
 var _;
 var extend_client;
-var extensions = [];
+var server_extensions = [];
 var common;
 
-try {
-  _ = require('underscore'); 
+try
+{
+  _ = require('underscore');
   extend_client = require('../clientWrapper.js');
-  extensions = [
-      require('../client_wrappers/metadata.js'), 
-        ];
+  server_extensions = [
+                        require('../client_wrappers/metadata.js')
+                      ];
   common = require('../common.js');
-} catch(err) {
+} catch(err)
+{
   /**
    * sth
-   **/ 
+   **/
   console.error(err);
 }
 
 var startServer = function () { };
 var amServer = false;
 
-function makeClientConnection(obj) {
+function makeClientConnection(obj)
+{
   var unload = false;
   var serverNames = ["server-0"];
   var knownPeers = {};
   var reliablePeers = {};
   var send = function () { };
-  var get_list = function () { return {}; };
+  var get_list = function () {
+    return {};
+  };
+  var get_meta = function () {
+    return {};
+  };
+  var is_conn = function () {
+    return false;
+  };
   var connect = function () { };
   var startCheckingForServer;
   var startCheckingPeers;
-  console.log(obj.extensions.toString());
   var new_obj = {
-    extensions : (function () {
+    extensions : (function ()
+    {
       var r = ['server_conn'];
       if(_.has(obj, 'extensions')) {
         r = obj.extensions.concat(r);
       }
       return r;
     }()),
-    on_data : function(p,d) {
+    on_data : function(p, d)
+    {
       if(_.has(obj, 'on_data')) {
         obj.on_data.apply(this, arguments);
       }
@@ -18855,24 +18860,26 @@ function makeClientConnection(obj) {
         send(p, {type : 'peer_update', ids : knownPeers });
       }
     },
-    on_close : function () {
+    on_close : function ()
+    {
       if(_.has(obj, 'on_close')) {
         obj.on_close.apply(this, arguments);
       }
     },
-    on_create : function () {
+    on_create : function ()
+    {
       if(_.has(obj, 'on_create')) {
-        console.log(obj.extensions.toString());
-        console.log(this.extensions.toString());
         obj.on_create.apply(this, arguments);
       }
-      startCheckingForServer();
-      startCheckingPeers();
+      _.delay(startCheckingForServer, 500);
+      _.delay(startCheckingPeers, 500);
     }
   };
   function requestPeers () {
     _.each(serverNames, function (el) {
-      send(el, { type : 'peer_request' });
+      if(is_conn(el)) {
+        send(el, { type : 'peer_request' });
+      }
     });
   }
 
@@ -18881,8 +18888,17 @@ function makeClientConnection(obj) {
     return function(p) {
       if(! _.has(sentRequests, p)) {
         connect(p);
-        sentRequests[p] = {};
-        setTimeout(function () { if(! _.has(get_list(), p)) { startServer(p); }}, 1500);
+        sentRequests[p] = (new Date()).getTime();
+        setTimeout(function () {
+          if(! is_conn(p)) {
+            startServer(p);
+          }
+        }, 1000);
+      } else {
+        if(! ( is_conn(p) || _.contains(amServer, p))) {
+          connect(p);
+          console.log('no connection to ' + p + ', reconnecting');
+        }
       }
     };
   }());
@@ -18892,22 +18908,31 @@ function makeClientConnection(obj) {
       checkForServer(el);
     });
     if(!unload) {
-      setTimeout(startCheckingForServer, 1000);
+      setTimeout(startCheckingForServer, 3000);
     }
   };
-  startCheckingPeers = function () {
-    knownPeers = reliablePeers;
-    _.extend(reliablePeers, get_list());
-    if(!unload) {
-      setTimeout(startCheckingPeers, 500);
-    }
-  };
+  startCheckingPeers = (function() {
+    var req = _.throttle(requestPeers, 5000);
+    return function () {
+      knownPeers = _.extend({}, reliablePeers);
+      _.each(get_list(), function(v) {
+        var o = {};
+        o[v] = get_meta(v);
+        _.extend(reliablePeers, o);
+      });
+      if(!unload) {
+        req();
+        setTimeout(startCheckingPeers, 1000);
+      }
+    };
+  }());
   window.addEventListener('onbeforeunload', function () {
     unload = true;
   });
   return {
     opt : common.extend(obj, new_obj),
-    extension : function(client) {
+    extension : function(client)
+    {
       get_list = function () {
         var list = client.get_list();
         var obj = {};
@@ -18924,34 +18949,47 @@ function makeClientConnection(obj) {
       };
       send = client.send;
       connect = client.connect;
-      return _.extend(client, { 
-        get_peers : function() { 
+      if(_.has(client, 'get_metadata')) {
+        get_meta = client.get_metadata;
+      }
+      is_conn = client.is_connected;
+      return _.extend(client, {
+        get_peers : function()
+        {
           /*var r = [];
           _.each(knownPeers, function (v,k) {
             r.push( v + ' : ' + ( k.name || " " ) );
-          }); 
+          });
           return r;*/
-          return knownPeers; },
-        request_peers : requestPeers, 
-        am_i_server : function () { return amServer; }
+          return knownPeers;
+        },
+        request_peers : requestPeers,
+        am_i_server : function ()
+        {
+          return amServer;
+        }
       });
     }
   };
 }
 
-startServer = function (name) {
+startServer = function (name)
+{
+  console.log('starting server ' + name);
+  server_extensions.push(makeClientConnection);
   var conn = extend_client({
-          base_opts: {
-            on_create : function () {
-              if(! amServer ) {
-                amServer = name;
-              } else {
-                amServer = [name] + amServer;
-              } 
-            },
-            id : name
-          },
-          extension_list: extensions.push(makeClientConnection)
+    base_opts: {
+      on_create : function ()
+      {
+        if(! amServer ) {
+          amServer = [name];
+        } else {
+          amServer = amServer.push(name);
+        }
+      },
+      id : name
+    },
+    extension_list: server_extensions
   });
   window.addEventListener('onbeforeunload', function () {
     conn.destroy();
@@ -18959,6 +18997,7 @@ startServer = function (name) {
 };
 
 module.exports = makeClientConnection;
+
 
 },{"../clientWrapper.js":136,"../client_wrappers/metadata.js":140,"../common.js":142,"underscore":133}],142:[function(require,module,exports){
 /**
@@ -19128,7 +19167,6 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
     this.pushToErrors('connecting to ' + id.toString());
   },
   handleData : function (id, text) {
-    this.pushToCommands(id.toString() + ' : ' + Message.get_message(text));
     if(Message.is_message(text)) {
       this.newMessage(id.toString() + ' : ' + Message.get_message(text));
     }
@@ -19151,7 +19189,7 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
     this.pushToErrors('(' + err.name + ') ' + err.message);
   },
   activePeer : function(i) {
-    return this.state.connection.get_list()[i];
+    return this.state.connection.get_list()[i || this.state.clicked];
   },
   handleClick : function (i) {
     this.state.clicked = i;
@@ -19346,7 +19384,6 @@ var tabber = (function () {
     return ret;
   }
   function createButton(item, i) {
-    console.log('creating button ' + i.toString());
     return (
       React.DOM.button( {className:"tabber-tab",
               'data-active':isButtonActive.call(this, i),

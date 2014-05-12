@@ -72,6 +72,7 @@ function makeClientConnection(obj) {
     if(_.has(info, p)) {
       return info[p];
     }
+    return {};
   }
   function setMeta (newMeta) {
     myMeta = newMeta;
