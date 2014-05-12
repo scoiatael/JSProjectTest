@@ -38,9 +38,6 @@ function makeClientConnection(obj)
   var get_list = function () {
     return {};
   };
-  var get_meta = function () {
-    return {};
-  };
   var is_conn = function () {
     return false;
   };
@@ -144,9 +141,9 @@ function makeClientConnection(obj)
       get_list = function () {
         var list = client.get_list();
         var obj = {};
-        if(_.has(client, 'get_meta')) {
+        if(_.has(client, 'get_metadata')) {
           _.each(list, function (el, k) {
-            obj[el] = client.get_meta(el);
+            obj[el] = client.get_metadata(el);
           });
         } else {
           _.each(list, function (el) {
@@ -157,9 +154,6 @@ function makeClientConnection(obj)
       };
       send = client.send;
       connect = client.connect;
-      if(_.has(client, 'get_metadata')) {
-        get_meta = client.get_metadata;
-      }
       is_conn = client.is_connected;
       return _.extend(client, {
         get_peers : function()
