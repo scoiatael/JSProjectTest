@@ -32,9 +32,6 @@ function clientExtend (obj) {
       fs.push(r.extension);
       return r.opt;
     }, opt);
-    if(_.has(opts, 'extensions')) {
-      console.log('Used client extensions: ' + opts.extensions);
-    }
     return _.reduce(fs, function (memo, item) {
       return item(memo); 
     }, client(opts)); 

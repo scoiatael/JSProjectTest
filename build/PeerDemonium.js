@@ -18428,9 +18428,6 @@ function clientExtend (obj) {
       fs.push(r.extension);
       return r.opt;
     }, opt);
-    if(_.has(opts, 'extensions')) {
-      console.log('Used client extensions: ' + opts.extensions);
-    }
     return _.reduce(fs, function (memo, item) {
       return item(memo); 
     }, client(opts)); 
@@ -18562,6 +18559,13 @@ function makeClientConnection(obj) {
           return r;
         }
       }
+      function accVals () {
+        return _.reduce([ 'sendto', 'connecto', 'list', 'destroy', 'closec', 'id', ].concat(
+          _.chain(_.keys(client)).value()), function (base, val) {
+            return val + ', ' + base;
+          }, "");
+      }
+
 
       function execute (string_command) {
         var command = string_command.split(' ');
@@ -18576,16 +18580,18 @@ function makeClientConnection(obj) {
             constString('connecting to ' + _.chain(command).rest().first().value()));
         ret = ret || bindCommandFunction(command, 'getp', client.get_peers, function (obj) {
           var str = "";
+          console.log('Got: ');
+          console.log(obj);
           _.each(obj, function (v,k) {
             str = str.concat(k + ': ' + (v.name || ' '));
           });
-          console.log(obj);
           console.log(str);
           return str || 'None';
         });
         ret = ret || bindCommandFunction(command, 'list', client.get_list);
         ret = ret || bindCommandFunction(command, 'destroy', client.destroy, constString("Bye!"));
         ret = ret || bindCommandFunction(command, 'closec', client.close);
+        ret = ret || bindCommandFunction(command, 'help', accVals);
         if(_.has(client, 'set_metadata')) {
           ret = ret || bindCommandFunction(command, 'name', function (name) {
             client.set_metadata(_.extend(client.my_metadata(), { name : name }));
@@ -18596,13 +18602,6 @@ function makeClientConnection(obj) {
         ret = ret || checkExtensions(command);
         ret = ret || ('Unknown command: ' + string_command);
         return ret;
-      }
-
-      function accVals () {
-        return _.reduce([ 'sendto', 'connecto', 'list', 'destroy', 'closec', 'id', ].concat(
-          _.chain(_.keys(client)).value()), function (base, val) {
-            return val + ', ' + base;
-          }, "");
       }
 
       return _.extend(client, {execute : execute, accepted_values : accVals});
@@ -18836,9 +18835,6 @@ function makeClientConnection(obj)
   var get_list = function () {
     return {};
   };
-  var get_meta = function () {
-    return {};
-  };
   var is_conn = function () {
     return false;
   };
@@ -18861,10 +18857,12 @@ function makeClientConnection(obj)
         obj.on_data.apply(this, arguments);
       }
       if(_.has(d, 'type') && d.type === 'peer_update') {
-        _.extend(reliablePeers, d.ids);
+        console.log('got peer update from ' + p);
+        console.log(d);
+        _.extend(knownPeers, d.ids);
       }
       if(_.has(d, 'type') && d.type === 'peer_request') {
-        send(p, {type : 'peer_update', ids : knownPeers });
+        send(p, {type : 'peer_update', ids : reliablePeers });
       }
     },
     on_close : function ()
@@ -18926,17 +18924,15 @@ function makeClientConnection(obj)
     }
   };
   startCheckingPeers = (function() {
-    var req = _.throttle(requestPeers, 5000);
     return function () {
-      knownPeers = _.extend({}, reliablePeers);
-      _.each(get_list(), function(v) {
-        var o = {};
-        o[v] = get_meta(v);
-        _.extend(reliablePeers, o);
+      knownPeers = reliablePeers;
+      reliablePeers = {};
+      _.each(get_list(), function(v,k) {
+        reliablePeers[k] = v;
       });
       if(!unload) {
-        req();
-        setTimeout(startCheckingPeers, 1000);
+        requestPeers();
+        setTimeout(startCheckingPeers, 10000);
       }
     };
   }());
@@ -18950,23 +18946,28 @@ function makeClientConnection(obj)
       get_list = function () {
         var list = client.get_list();
         var obj = {};
-        if(_.has(client, 'get_meta')) {
+        if(_.has(client, 'get_metadata')) {
           _.each(list, function (el, k) {
-            obj[k] = client.get_meta(el);
+            obj[el] = client.get_metadata(el);
           });
         } else {
-          _.each(list, function (el, k) {
-            obj[k] = {};
+          _.each(list, function (el) {
+            obj[el] = {};
           });
         }
         return obj;
       };
       send = client.send;
       connect = client.connect;
-      if(_.has(client, 'get_metadata')) {
-        get_meta = client.get_metadata;
-      }
-      is_conn = client.is_connected;
+      is_conn = function (k) { 
+        // Why does it sometimes return value for server instead of client?
+        var v1 = client.is_connected(k);
+        var v2 = _.contains(client.get_list(), k);
+        if(v1 != v2) {
+         console.log('mismatch');
+        }
+       return v1 || v2 ;
+      }; 
       return _.extend(client, {
         get_peers : function()
         {
@@ -18981,6 +18982,12 @@ function makeClientConnection(obj)
         am_i_server : function ()
         {
           return amServer;
+        },
+        start_server : startServer,
+        reliable_peers : function () 
+        {
+          console.log(reliablePeers);
+          return reliablePeers;
         }
       });
     }
