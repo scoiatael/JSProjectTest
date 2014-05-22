@@ -18210,7 +18210,6 @@ try {
  * obj should have properties
  *
  * obj can have properties
- * * error_handler        - function to forward errors to   - function (err) 
  * * id                   - custom id                       - String
  * * options              - options to pass to Peer creator - Object
  * * on_create            - Peer working                    - function (id)
@@ -18218,9 +18217,10 @@ try {
  * * on_open              - connection opened               - function (id)
  * * on_data              - process received data           - function (who, what) 
  * * on_close             - when someone closes connection  - function (id)
+ * * on_error             - function to forward errors to   - function (err) 
  *
  * return Object with properties:
- * * connect              - connects to id                  - function (id)
+ * * connect              - connects to id                  - function (id) -> Bool
  * * send                 - sends sth to id                 - function (id, sth)
  * * close                - closes connection               - function (id)
  * * get_list             - returns list of ids             - function () -> [String]
@@ -18262,8 +18262,8 @@ function makeClient (obj) {
   var leaveMsg = { type : 'leaving' };
 
   forwardError =  function(err) {
-    if(_.has(obj, 'error_handler')) {
-      obj.error_handler(err);
+    if(_.has(obj, 'on_error')) {
+      obj.on_error(err);
     } else {
       console.log(err);
     }
@@ -18311,13 +18311,16 @@ function makeClient (obj) {
     }
   };
   sendTo = function(id, what) {
+    sanityCheck();
+    if(! opened) {
+      return;
+    }
     var whatStr = "";
     if(_.isObject(what)) {
       whatStr = what.type || what.toString();
     }
     console.log('sending ' + whatStr + ' to ' + id);
     console.log(what);
-    sanityCheck();
     var done = false;
     if(_.has(connections, id)) {
       connections[id].send(what);
@@ -18340,6 +18343,9 @@ function makeClient (obj) {
   };
   connectTo = function (id, options) {
     sanityCheck();
+    if(! opened) {
+      return;
+    }
     var opts = options;
     if (typeof options === 'undefined') {
       opts = {};  
@@ -18412,7 +18418,6 @@ function clientExtend (obj) {
   var opt = obj.base_opts;
   var list = obj.extension_list;
   return (function extend() {
-    console.log('Extending client with ' + list.length + ' extensions');
     var fs = [];
     var opts = _.reduce(list, function (memo, item) {
       if(typeof item !== 'function') {
@@ -18795,7 +18800,7 @@ module.exports = makeClientConnection;
  * Łukasz Czapliński, ii.uni.wroc.pl
  * 09-04-2014
  * */
-/*global window*/
+/*global window,alert*/
 var _;
 var extend_client;
 var server_extensions = [];
@@ -18819,11 +18824,12 @@ try
 
 var startServer = function () { };
 var amServer = false;
+var serverNumber = 0;
 
 function makeClientConnection(obj)
 {
   var unload = false;
-  var serverNames = ["server-0"];
+  var serverName = function() { return "server-"+serverNumber.toString(); };
   var knownPeers = {};
   var reliablePeers = {};
   var send = function () { };
@@ -18839,6 +18845,7 @@ function makeClientConnection(obj)
   var connect = function () { };
   var startCheckingForServer;
   var startCheckingPeers;
+  var sentRequests = {};
   var new_obj = {
     extensions : (function ()
     {
@@ -18866,49 +18873,56 @@ function makeClientConnection(obj)
         obj.on_close.apply(this, arguments);
       }
     },
+    on_error : function (error)
+    {
+      if(_.has(obj, 'on_error')) {
+        obj.on_close.apply(this, arguments);
+      }
+      var reg = /Could not connect to peer '(.*)' .+/;
+      var m = reg.exec(error.message);
+      if(m) {
+        alert("Error connecting to " + m);
+      }
+    },
     on_create : function ()
     {
       if(_.has(obj, 'on_create')) {
         obj.on_create.apply(this, arguments);
       }
-      _.delay(startCheckingForServer, 500);
-      _.delay(startCheckingPeers, 500);
+      _.delay(startCheckingForServer, 3000);
+      _.delay(startCheckingPeers, 1000);
     }
   };
   function requestPeers () {
-    _.each(serverNames, function (el) {
-      if(is_conn(el)) {
-        send(el, { type : 'peer_request' });
-      }
-    });
+    var ser = serverName();
+    if(is_conn(ser)) {
+      send(ser, { type : 'peer_request' });
+    }
   }
 
-  var checkForServer = (function () {
-    var sentRequests = {};
-    return function(p) {
-      if(! _.has(sentRequests, p)) {
-        connect(p);
-        sentRequests[p] = (new Date()).getTime();
-        setTimeout(function () {
-          if(! is_conn(p)) {
-            startServer(p);
-          }
-        }, 1000);
-      } else {
-        if(! ( is_conn(p) || _.contains(amServer, p))) {
-          connect(p);
-          console.log('no connection to ' + p + ', reconnecting');
-        }
+  var checkForServer = function(p) {
+    if(! _.has(sentRequests, p)) {
+      if(! connect(p)) {
+        return;
       }
-    };
-  }());
+      sentRequests[p] = (new Date()).getTime();
+      setTimeout(function () {
+        if(! is_conn(p)) {
+          startServer(p);
+        }
+      }, 5000);
+    } else {
+      if(! ( is_conn(p) )) {
+        connect(p);
+      //  console.log('no connection to ' + p + ', reconnecting');
+      }
+    }
+  };
 
   startCheckingForServer = function () {
-    _.each(serverNames, function (el) {
-      checkForServer(el);
-    });
+    checkForServer(serverName());
     if(!unload) {
-      setTimeout(startCheckingForServer, 3000);
+      setTimeout(startCheckingForServer, 10000);
     }
   };
   startCheckingPeers = (function() {
@@ -18973,10 +18987,10 @@ function makeClientConnection(obj)
   };
 }
 
+server_extensions.push(makeClientConnection);
 startServer = function (name)
 {
   console.log('starting server ' + name);
-  server_extensions.push(makeClientConnection);
   var conn = extend_client({
     base_opts: {
       on_create : function ()
@@ -18985,6 +18999,13 @@ startServer = function (name)
           amServer = [name];
         } else {
           amServer = amServer.push(name);
+        }
+      },
+      on_error : function (error)
+      {
+        if(error.type === "unavailable-id") {
+          alert("Critical server error");
+          serverNumber++;
         }
       },
       id : name
@@ -19221,12 +19242,14 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
           React.DOM.div( {id:"message-box"}, 
             messageDisplay( {messages:this.state.messages, name:"messages"}), 
             executionForm( {execute: this.send, getSuggestions:this.state.connection.complete} ) 
-          ),
-            messageDisplay( {messages:this.state.errors, name:"errors"} ) 
+          )
         ),
-        React.DOM.div( {id:"command-box"}, 
-          messageDisplay( {messages:this.state.commands, name:"commands"}), 
-          executionForm( {execute: this.execute, getSuggestions:this.state.connection.complete} ) 
+        React.DOM.div( {id:"debug-box"}, 
+          React.DOM.div( {id:"command-box"}, 
+            messageDisplay( {messages:this.state.commands, name:"commands"}), 
+            executionForm( {execute: this.execute, getSuggestions:this.state.connection.complete} ) 
+          ),
+          messageDisplay( {messages:this.state.errors, name:"errors"} ) 
         )
       )
       );

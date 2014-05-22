@@ -121,11 +121,13 @@ var connectionManager = React.createClass({
             <messageDisplay messages={this.state.messages} name='messages'/> 
             <executionForm execute ={this.send} getSuggestions={this.state.connection.complete} /> 
           </div>
-            <messageDisplay messages={this.state.errors} name='errors' /> 
         </div>
-        <div id='command-box'>
-          <messageDisplay messages={this.state.commands} name='commands'/> 
-          <executionForm execute ={this.execute} getSuggestions={this.state.connection.complete} /> 
+        <div id='debug-box'>
+          <div id='command-box'>
+            <messageDisplay messages={this.state.commands} name='commands'/> 
+            <executionForm execute ={this.execute} getSuggestions={this.state.connection.complete} /> 
+          </div>
+          <messageDisplay messages={this.state.errors} name='errors' /> 
         </div>
       </div>
       );

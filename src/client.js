@@ -19,7 +19,6 @@ try {
  * obj should have properties
  *
  * obj can have properties
- * * error_handler        - function to forward errors to   - function (err) 
  * * id                   - custom id                       - String
  * * options              - options to pass to Peer creator - Object
  * * on_create            - Peer working                    - function (id)
@@ -27,9 +26,10 @@ try {
  * * on_open              - connection opened               - function (id)
  * * on_data              - process received data           - function (who, what) 
  * * on_close             - when someone closes connection  - function (id)
+ * * on_error             - function to forward errors to   - function (err) 
  *
  * return Object with properties:
- * * connect              - connects to id                  - function (id)
+ * * connect              - connects to id                  - function (id) -> Bool
  * * send                 - sends sth to id                 - function (id, sth)
  * * close                - closes connection               - function (id)
  * * get_list             - returns list of ids             - function () -> [String]
@@ -71,8 +71,8 @@ function makeClient (obj) {
   var leaveMsg = { type : 'leaving' };
 
   forwardError =  function(err) {
-    if(_.has(obj, 'error_handler')) {
-      obj.error_handler(err);
+    if(_.has(obj, 'on_error')) {
+      obj.on_error(err);
     } else {
       console.log(err);
     }
@@ -120,13 +120,16 @@ function makeClient (obj) {
     }
   };
   sendTo = function(id, what) {
+    sanityCheck();
+    if(! opened) {
+      return;
+    }
     var whatStr = "";
     if(_.isObject(what)) {
       whatStr = what.type || what.toString();
     }
     console.log('sending ' + whatStr + ' to ' + id);
     console.log(what);
-    sanityCheck();
     var done = false;
     if(_.has(connections, id)) {
       connections[id].send(what);
@@ -149,6 +152,9 @@ function makeClient (obj) {
   };
   connectTo = function (id, options) {
     sanityCheck();
+    if(! opened) {
+      return;
+    }
     var opts = options;
     if (typeof options === 'undefined') {
       opts = {};  

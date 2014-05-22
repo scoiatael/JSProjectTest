@@ -3,7 +3,7 @@
  * Łukasz Czapliński, ii.uni.wroc.pl
  * 09-04-2014
  * */
-/*global window*/
+/*global window,alert*/
 var _;
 var extend_client;
 var server_extensions = [];
@@ -27,11 +27,12 @@ try
 
 var startServer = function () { };
 var amServer = false;
+var serverNumber = 0;
 
 function makeClientConnection(obj)
 {
   var unload = false;
-  var serverNames = ["server-0"];
+  var serverName = function() { return "server-"+serverNumber.toString(); };
   var knownPeers = {};
   var reliablePeers = {};
   var send = function () { };
@@ -47,6 +48,7 @@ function makeClientConnection(obj)
   var connect = function () { };
   var startCheckingForServer;
   var startCheckingPeers;
+  var sentRequests = {};
   var new_obj = {
     extensions : (function ()
     {
@@ -74,49 +76,56 @@ function makeClientConnection(obj)
         obj.on_close.apply(this, arguments);
       }
     },
+    on_error : function (error)
+    {
+      if(_.has(obj, 'on_error')) {
+        obj.on_close.apply(this, arguments);
+      }
+      var reg = /Could not connect to peer '(.*)' .+/;
+      var m = reg.exec(error.message);
+      if(m) {
+        alert("Error connecting to " + m);
+      }
+    },
     on_create : function ()
     {
       if(_.has(obj, 'on_create')) {
         obj.on_create.apply(this, arguments);
       }
-      _.delay(startCheckingForServer, 500);
-      _.delay(startCheckingPeers, 500);
+      _.delay(startCheckingForServer, 3000);
+      _.delay(startCheckingPeers, 1000);
     }
   };
   function requestPeers () {
-    _.each(serverNames, function (el) {
-      if(is_conn(el)) {
-        send(el, { type : 'peer_request' });
-      }
-    });
+    var ser = serverName();
+    if(is_conn(ser)) {
+      send(ser, { type : 'peer_request' });
+    }
   }
 
-  var checkForServer = (function () {
-    var sentRequests = {};
-    return function(p) {
-      if(! _.has(sentRequests, p)) {
-        connect(p);
-        sentRequests[p] = (new Date()).getTime();
-        setTimeout(function () {
-          if(! is_conn(p)) {
-            startServer(p);
-          }
-        }, 1000);
-      } else {
-        if(! ( is_conn(p) || _.contains(amServer, p))) {
-          connect(p);
-          console.log('no connection to ' + p + ', reconnecting');
-        }
+  var checkForServer = function(p) {
+    if(! _.has(sentRequests, p)) {
+      if(! connect(p)) {
+        return;
       }
-    };
-  }());
+      sentRequests[p] = (new Date()).getTime();
+      setTimeout(function () {
+        if(! is_conn(p)) {
+          startServer(p);
+        }
+      }, 5000);
+    } else {
+      if(! ( is_conn(p) )) {
+        connect(p);
+      //  console.log('no connection to ' + p + ', reconnecting');
+      }
+    }
+  };
 
   startCheckingForServer = function () {
-    _.each(serverNames, function (el) {
-      checkForServer(el);
-    });
+    checkForServer(serverName());
     if(!unload) {
-      setTimeout(startCheckingForServer, 3000);
+      setTimeout(startCheckingForServer, 10000);
     }
   };
   startCheckingPeers = (function() {
@@ -181,10 +190,10 @@ function makeClientConnection(obj)
   };
 }
 
+server_extensions.push(makeClientConnection);
 startServer = function (name)
 {
   console.log('starting server ' + name);
-  server_extensions.push(makeClientConnection);
   var conn = extend_client({
     base_opts: {
       on_create : function ()
@@ -193,6 +202,13 @@ startServer = function (name)
           amServer = [name];
         } else {
           amServer = amServer.push(name);
+        }
+      },
+      on_error : function (error)
+      {
+        if(error.type === "unavailable-id") {
+          alert("Critical server error");
+          serverNumber++;
         }
       },
       id : name
