@@ -14,6 +14,7 @@ try
   _ = require('underscore');
   extend_client = require('../clientWrapper.js');
   server_extensions = [
+//                        require('../client_wrappers/check_status.js'),
                         require('../client_wrappers/metadata.js')
                       ];
   common = require('../common.js');
@@ -69,11 +70,13 @@ function makeClientConnection(obj)
         send(p, {type : 'peer_update', ids : reliablePeers });
       }
     },
-    on_close : function ()
+    on_close : function (id)
     {
       if(_.has(obj, 'on_close')) {
         obj.on_close.apply(this, arguments);
       }
+      delete(sentRequests[id]);
+
     },
     on_error : function (error)
     {
@@ -84,6 +87,7 @@ function makeClientConnection(obj)
       var m = reg.exec(error.message);
       if(m) {
         alert("Error connecting to " + m);
+        delete(sentRequests[m[0]]);
       }
     },
     on_create : function ()

@@ -27,6 +27,7 @@ try {
       require('./client_wrappers/metadata.js'), 
       require('./client_wrappers/execute.js'), 
       require('./client_wrappers/history.js'),
+//      require('./client_wrappers/check_status.js'),
       require('./client_wrappers/server_conn.js')
         ];
   tabber = require('./tabber.js');

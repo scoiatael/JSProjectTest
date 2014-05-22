@@ -31,7 +31,7 @@ var messageDisplay = React.createClass({
   },
   componentWillUpdate: function() {
     var node = this.getDOMNode();
-    this.shouldScrollBottom = node.scrollTop + node.offsetHeight === node.scrollHeight;
+    this.shouldScrollBottom = ! (node.scrollTop + node.offsetHeight < node.scrollHeight );
   },
    
   componentDidUpdate: function() {

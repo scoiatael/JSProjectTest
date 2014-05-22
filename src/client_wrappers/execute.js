@@ -94,12 +94,9 @@ function makeClientConnection(obj) {
             constString('connecting to ' + _.chain(command).rest().first().value()));
         ret = ret || bindCommandFunction(command, 'getp', client.get_peers, function (obj) {
           var str = "";
-          console.log('Got: ');
-          console.log(obj);
           _.each(obj, function (v,k) {
             str = str.concat(k + ': ' + (v.name || ' '));
           });
-          console.log(str);
           return str || 'None';
         });
         ret = ret || bindCommandFunction(command, 'list', client.get_list);

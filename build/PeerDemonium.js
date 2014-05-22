@@ -5,7 +5,7 @@ var _ = require('underscore');
 
 rendering();
 
-},{"./tmp/main.js":145,"underscore":133}],2:[function(require,module,exports){
+},{"./tmp/main.js":146,"underscore":133}],2:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -18315,12 +18315,15 @@ function makeClient (obj) {
     if(! opened) {
       return;
     }
-    var whatStr = "";
+/*    if(! _.has(peer.connections, id)) {
+      closeConnection(id);
+    }
+*/    var whatStr = "";
     if(_.isObject(what)) {
       whatStr = what.type || what.toString();
     }
-    console.log('sending ' + whatStr + ' to ' + id);
-    console.log(what);
+//    console.log('sending ' + whatStr + ' to ' + id);
+//    console.log(what);
     var done = false;
     if(_.has(connections, id)) {
       connections[id].send(what);
@@ -18337,6 +18340,7 @@ function makeClient (obj) {
       console.log('got sth from ' + who.toString());
       console.log(what);
     }
+    console.log((typeof what === 'object' && (what.type || what.toString())) || what.toString());
     if(what === leaveMsg) {
       closeConnection(who);
     }
@@ -18393,7 +18397,7 @@ function makeClient (obj) {
 
 module.exports = makeClient;
 
-},{"./keys.js":144,"underscore":133}],136:[function(require,module,exports){
+},{"./keys.js":145,"underscore":133}],136:[function(require,module,exports){
 /**
  * clientWrapper.js
  * Łukasz Czapliński, ii.uni.wroc.pl
@@ -18436,7 +18440,7 @@ function clientExtend (obj) {
 
 module.exports = clientExtend;
 
-},{"./client.js":135,"./common.js":142,"underscore":133}],137:[function(require,module,exports){
+},{"./client.js":135,"./common.js":143,"underscore":133}],137:[function(require,module,exports){
 /**
  * autocomplete.js
  * Łukasz Czapliński, ii.uni.wroc.pl
@@ -18483,7 +18487,91 @@ function makeClientConnection(obj) {
 
 module.exports = makeClientConnection;
 
-},{"../common.js":142,"underscore":133}],138:[function(require,module,exports){
+},{"../common.js":143,"underscore":133}],138:[function(require,module,exports){
+/**
+ * check_status.js
+ * Łukasz Czapliński, ii.uni.wroc.pl
+ * 20-03-2014
+ * */
+var _;
+var makeClient;
+var common;
+
+try {
+  _ = require('underscore'); 
+  common = require('../common.js');
+} catch(err) {
+  /**
+   * sth
+   **/ 
+  console.error(err);
+}
+
+function makeClientConnection(obj) {
+  'use strict';
+  var start_checking_connections = function () { };
+  var send = function () {};
+  var pending_connections = {};
+  var new_obj = {
+    extensions : (function () {
+      var r = ['check_status'];
+      if(_.has(obj, 'extensions')) {
+        r = obj.extensions.concat(r);
+      }
+      return r;
+    }()),
+    on_open : function() {
+      if(_.has(obj, 'on_open')) {
+        obj.on_open.apply(this, arguments);
+      }
+    },
+    on_data : function(who, what) {
+      if(_.has(obj, 'on_data')) {
+        obj.on_data.apply(this, arguments);
+      }
+      if(_.has(what, 'type')) {
+        if(what.type === 'ping') {
+          send(who, { type : 'ping-response' } );
+        }
+        if(what.type === 'ping-response') {
+          delete(pending_connections[who]);
+        }
+      }
+    }
+  };
+  return {
+    opt : common.extend(obj, new_obj),
+    extension : function(client) {
+      function check_connections () {
+        _.each(pending_connections, function (val, key) {
+          delete(pending_connections[key]);
+          console.log('closing ' + key);
+          client.close(key);
+        });
+        _.each(client.get_list(), function(val, key) {
+          client.send(val, { type : 'ping' });
+          if(! _.contains(pending_connections, val)) {
+            pending_connections[val] = (new Date()).getTime();
+          }
+        });
+      }
+      start_checking_connections = function () {
+        if(client.is_destroyed()) {
+          return;
+        }
+        check_connections();
+        setTimeout(start_checking_connections, 5000);
+      };
+      send = client.send;
+      start_checking_connections();
+      return client;
+    }
+  };
+}
+
+module.exports = makeClientConnection;
+
+},{"../common.js":143,"underscore":133}],139:[function(require,module,exports){
 /**
  * execute.js
  * Łukasz Czapliński, ii.uni.wroc.pl
@@ -18580,12 +18668,9 @@ function makeClientConnection(obj) {
             constString('connecting to ' + _.chain(command).rest().first().value()));
         ret = ret || bindCommandFunction(command, 'getp', client.get_peers, function (obj) {
           var str = "";
-          console.log('Got: ');
-          console.log(obj);
           _.each(obj, function (v,k) {
             str = str.concat(k + ': ' + (v.name || ' '));
           });
-          console.log(str);
           return str || 'None';
         });
         ret = ret || bindCommandFunction(command, 'list', client.get_list);
@@ -18620,7 +18705,7 @@ module.exports = makeClientConnection;
           }())
           */
 
-},{"../common.js":142,"underscore":133}],139:[function(require,module,exports){
+},{"../common.js":143,"underscore":133}],140:[function(require,module,exports){
 /**
  * history.js
  * Łukasz Czapliński, ii.uni.wroc.pl
@@ -18693,7 +18778,7 @@ function makeClientConnection(obj) {
 
 module.exports = makeClientConnection;
 
-},{"../common.js":142,"../message.js":146,"underscore":133}],140:[function(require,module,exports){
+},{"../common.js":143,"../message.js":147,"underscore":133}],141:[function(require,module,exports){
 /**
  * metadata.js
  * Łukasz Czapliński, ii.uni.wroc.pl
@@ -18793,7 +18878,7 @@ function makeClientConnection(obj) {
 
 module.exports = makeClientConnection;
 
-},{"../common.js":142,"underscore":133}],141:[function(require,module,exports){
+},{"../common.js":143,"underscore":133}],142:[function(require,module,exports){
 /**
  * server_conn.js
  * Łukasz Czapliński, ii.uni.wroc.pl
@@ -18810,7 +18895,8 @@ try
   _ = require('underscore');
   extend_client = require('../clientWrapper.js');
   server_extensions = [
-                        require('../client_wrappers/metadata.js')
+                        require('../client_wrappers/metadata.js'),
+                        require('../client_wrappers/check_status.js')
                       ];
   common = require('../common.js');
 } catch(err)
@@ -18865,11 +18951,13 @@ function makeClientConnection(obj)
         send(p, {type : 'peer_update', ids : reliablePeers });
       }
     },
-    on_close : function ()
+    on_close : function (id)
     {
       if(_.has(obj, 'on_close')) {
         obj.on_close.apply(this, arguments);
       }
+      delete(sentRequests[id]);
+
     },
     on_error : function (error)
     {
@@ -18880,6 +18968,7 @@ function makeClientConnection(obj)
       var m = reg.exec(error.message);
       if(m) {
         alert("Error connecting to " + m);
+        delete(sentRequests[m[0]]);
       }
     },
     on_create : function ()
@@ -19027,7 +19116,7 @@ startServer = function (name)
 module.exports = makeClientConnection;
 
 
-},{"../clientWrapper.js":136,"../client_wrappers/metadata.js":140,"../common.js":142,"underscore":133}],142:[function(require,module,exports){
+},{"../clientWrapper.js":136,"../client_wrappers/check_status.js":138,"../client_wrappers/metadata.js":141,"../common.js":143,"underscore":133}],143:[function(require,module,exports){
 /**
  * common.js
  * Łukasz Czapliński, ii.uni.wroc.pl
@@ -19062,7 +19151,7 @@ function extend(dest, source) {
 
 module.exports = { check_for_properties : check, log_error : logError, extend : extend };
 
-},{"underscore":133}],143:[function(require,module,exports){
+},{"underscore":133}],144:[function(require,module,exports){
 /** @jsx React.DOM */
 /**
  * executionForm.jsx
@@ -19114,7 +19203,7 @@ var executionForm = (function () {
 
 module.exports = executionForm;
 
-},{"react":132,"underscore":133}],144:[function(require,module,exports){
+},{"react":132,"underscore":133}],145:[function(require,module,exports){
 /**
  * keys.js
  * Łukasz Czapliński, ii.uni.wroc.pl
@@ -19126,7 +19215,7 @@ var apiKeys = {
 
 module.exports = apiKeys;
 
-},{}],145:[function(require,module,exports){
+},{}],146:[function(require,module,exports){
 /** @jsx React.DOM */
 /**
  * main.jsx
@@ -19156,6 +19245,7 @@ try {
       require('./client_wrappers/metadata.js'), 
       require('./client_wrappers/execute.js'), 
       require('./client_wrappers/history.js'),
+      require('./client_wrappers/check_status.js'),
       require('./client_wrappers/server_conn.js')
         ];
   tabber = require('./tabber.js');
@@ -19311,7 +19401,7 @@ module.exports = function () {
   //React.renderComponent(< helloX name='World'/>, document.getElementById('js-content'));
 };
 
-},{"./addConnection.js":134,"./clientWrapper.js":136,"./client_wrappers/autocomplete.js":137,"./client_wrappers/execute.js":138,"./client_wrappers/history.js":139,"./client_wrappers/metadata.js":140,"./client_wrappers/server_conn.js":141,"./executionForm.js":143,"./message.js":146,"./messageDisplay.js":147,"./tabber.js":148,"react":132,"underscore":133}],146:[function(require,module,exports){
+},{"./addConnection.js":134,"./clientWrapper.js":136,"./client_wrappers/autocomplete.js":137,"./client_wrappers/check_status.js":138,"./client_wrappers/execute.js":139,"./client_wrappers/history.js":140,"./client_wrappers/metadata.js":141,"./client_wrappers/server_conn.js":142,"./executionForm.js":144,"./message.js":147,"./messageDisplay.js":148,"./tabber.js":149,"react":132,"underscore":133}],147:[function(require,module,exports){
 /**
  * message.js
  * Łukasz Czapliński, ii.uni.wroc.pl
@@ -19333,7 +19423,7 @@ function getMessage(d) {
 
 module.exports = { is_message : isMessage, get_message : getMessage };
 
-},{}],147:[function(require,module,exports){
+},{}],148:[function(require,module,exports){
 /** @jsx React.DOM */
 /**
  * messageDisplay.jsx
@@ -19367,7 +19457,7 @@ var messageDisplay = React.createClass({displayName: 'messageDisplay',
   },
   componentWillUpdate: function() {
     var node = this.getDOMNode();
-    this.shouldScrollBottom = node.scrollTop + node.offsetHeight === node.scrollHeight;
+    this.shouldScrollBottom = ! (node.scrollTop + node.offsetHeight < node.scrollHeight );
   },
    
   componentDidUpdate: function() {
@@ -19380,7 +19470,7 @@ var messageDisplay = React.createClass({displayName: 'messageDisplay',
 
 module.exports = messageDisplay;
 
-},{"react":132,"underscore":133}],148:[function(require,module,exports){
+},{"react":132,"underscore":133}],149:[function(require,module,exports){
 /** @jsx React.DOM */
 /**
  * tabber.jsx

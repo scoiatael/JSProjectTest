@@ -124,12 +124,15 @@ function makeClient (obj) {
     if(! opened) {
       return;
     }
-    var whatStr = "";
+/*    if(! _.has(peer.connections, id)) {
+      closeConnection(id);
+    }
+*/    var whatStr = "";
     if(_.isObject(what)) {
       whatStr = what.type || what.toString();
     }
-    console.log('sending ' + whatStr + ' to ' + id);
-    console.log(what);
+//    console.log('sending ' + whatStr + ' to ' + id);
+//    console.log(what);
     var done = false;
     if(_.has(connections, id)) {
       connections[id].send(what);
@@ -146,6 +149,7 @@ function makeClient (obj) {
       console.log('got sth from ' + who.toString());
       console.log(what);
     }
+    console.log((typeof what === 'object' && (what.type || what.toString())) || what.toString());
     if(what === leaveMsg) {
       closeConnection(who);
     }
