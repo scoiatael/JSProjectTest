@@ -14,7 +14,7 @@ try
   _ = require('underscore');
   extend_client = require('../clientWrapper.js');
   server_extensions = [
-//                        require('../client_wrappers/check_status.js'),
+                        require('../client_wrappers/check_status.js'),
                         require('../client_wrappers/metadata.js')
                       ];
   common = require('../common.js');
