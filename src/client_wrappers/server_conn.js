@@ -58,6 +58,7 @@ function makeClientConnection(obj)
     }()),
     on_data : function(p, d)
     {
+      delete(sentRequests[p]);
       if(_.has(obj, 'on_data')) {
         obj.on_data.apply(this, arguments);
       }
@@ -108,7 +109,7 @@ function makeClientConnection(obj)
 
   var checkForServer = function(p) {
     if(! _.has(sentRequests, p)) {
-      if(! connect(p)) {
+      if(is_conn(p) || (! connect(p))) {
         return;
       }
       sentRequests[p] = (new Date()).getTime();
