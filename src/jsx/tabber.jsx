@@ -21,7 +21,7 @@ try {
 var tabber = (function () { 
   function handleClick (i) {
     console.log('clicked ' + this.props.items[i]);
-    this.props.onClick(i);
+    this.props.onClick(i, this.props.items[i]);
   }
   function isButtonActive (i) {
     var ret = '0';

@@ -18189,9 +18189,10 @@ var executionForm = (function () {
     render : function () {
       return (
         React.DOM.form( {id:"execute-form", onSubmit:handleSubmit.bind(this)} , 
+        React.DOM.input( {type:"text", placeholder:"id..", ref:"text", id:"addC-text"}),
         React.DOM.button( {type:"submit", id:"addC-button"} , 
-          React.DOM.img( {src:"img/tab-new.png", alt:"connect", id:"addC-img"} ), " " ),
-        React.DOM.input( {type:"text", placeholder:"id..", ref:"text", id:"addC-text"})
+          React.DOM.img( {src:"img/tab-new.png", alt:"connect", id:"addC-img"} ) 
+        )
         ));
     }
   });
@@ -18752,13 +18753,13 @@ function makeClientConnection(obj) {
       if(_.has(obj, 'on_data')) {
         obj.on_data.apply(this, arguments);
       }
-      if( Message.is_message(d) ) {
+/*      if( Message.is_message(d) ) {
         if(!(_.has(info, p) && typeof info[p] !== 'undefined')) {
           info[p] = []; 
         }
         info[p].push(Message.get_message(d));
       }
-    },
+*/    },
     on_close : function () {
       var iter;
       if(_.has(obj, 'on_close')) {
@@ -18778,11 +18779,18 @@ function makeClientConnection(obj) {
       return info[p];
     }
   }
+  function addMessage (p, m) {
+    if(!(_.has(info, p) && typeof info[p] !== 'undefined')) {
+      info[p] = []; 
+    }
+    info[p].push(m);
+  }
+
   return {
     opt : common.extend(obj, new_obj),
     extension : function(client) {
       is_connected = client.is_connected;
-      return _.extend(client, { get_history : getHist });
+      return _.extend(client, { get_history : getHist, add_message : addMessage });
     }
   };
 }
@@ -19291,7 +19299,9 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
    },
   send : function ( text ) {
     var return_text = this.state.connection.send(this.activePeer(),text);
-    this.newMessage('-> ' + text);
+    newM = '-> ' + text;
+    this.newMessage(newM);
+    this.state.connection.add_message(this.activePeer(), newM);
   },
   addConnection : function(id) {
     this.state.connection.connect(id);
@@ -19299,7 +19309,9 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
   },
   handleData : function (id, text) {
     if(Message.is_message(text)) {
-      this.newMessage(id.toString() + ' : ' + Message.get_message(text));
+      newM = (id.toString() + ' : ' + Message.get_message(text));
+      this.newMessage(newM);
+      this.state.connection.add_message(id, newM);
     }
   },
   pushToErrors : function (text) {
@@ -19322,10 +19334,9 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
   activePeer : function(i) {
     return this.state.connection.get_list()[i || this.state.clicked];
   },
-  handleClick : function (i) {
-    this.state.clicked = i;
-    var peer = this.activePeer();
-    this.state.messages = this.state.connection.get_history(peer) || [];
+  handleClick : function (i, peer) {
+    this.setState({clicked : i, messages : this.state.connection.get_history(peer) || []});
+    console.log('Active is ' + peer);
   },
   generateTabs : function() {
     return _.map(this.state.connection.get_list(), function(key) {
@@ -19546,7 +19557,7 @@ try {
 var tabber = (function () { 
   function handleClick (i) {
     console.log('clicked ' + this.props.items[i]);
-    this.props.onClick(i);
+    this.props.onClick(i, this.props.items[i]);
   }
   function isButtonActive (i) {
     var ret = '0';

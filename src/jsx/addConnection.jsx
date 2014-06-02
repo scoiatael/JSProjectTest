@@ -32,9 +32,10 @@ var executionForm = (function () {
     render : function () {
       return (
         <form id='execute-form' onSubmit={handleSubmit.bind(this)} >
-        <button type='submit' id='addC-button' >
-          <img src='img/tab-new.png' alt='connect' id='addC-img' /> </ button>
         <input type='text' placeholder='id..' ref='text' id='addC-text'/>
+        <button type='submit' id='addC-button' >
+          <img src='img/tab-new.png' alt='connect' id='addC-img' /> 
+        </ button>
         </form>);
     }
   });

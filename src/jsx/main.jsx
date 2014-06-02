@@ -61,7 +61,9 @@ var connectionManager = React.createClass({
    },
   send : function ( text ) {
     var return_text = this.state.connection.send(this.activePeer(),text);
-    this.newMessage('-> ' + text);
+    newM = '-> ' + text;
+    this.newMessage(newM);
+    this.state.connection.add_message(this.activePeer(), newM);
   },
   addConnection : function(id) {
     this.state.connection.connect(id);
@@ -69,7 +71,9 @@ var connectionManager = React.createClass({
   },
   handleData : function (id, text) {
     if(Message.is_message(text)) {
-      this.newMessage(id.toString() + ' : ' + Message.get_message(text));
+      newM = (id.toString() + ' : ' + Message.get_message(text));
+      this.newMessage(newM);
+      this.state.connection.add_message(id, newM);
     }
   },
   pushToErrors : function (text) {
@@ -92,10 +96,9 @@ var connectionManager = React.createClass({
   activePeer : function(i) {
     return this.state.connection.get_list()[i || this.state.clicked];
   },
-  handleClick : function (i) {
-    this.state.clicked = i;
-    var peer = this.activePeer();
-    this.state.messages = this.state.connection.get_history(peer) || [];
+  handleClick : function (i, peer) {
+    this.setState({clicked : i, messages : this.state.connection.get_history(peer) || []});
+    console.log('Active is ' + peer);
   },
   generateTabs : function() {
     return _.map(this.state.connection.get_list(), function(key) {

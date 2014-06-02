@@ -45,6 +45,16 @@
   float:left;
 }
 
+.tabber-tab[data-active="1"] {
+  background-color:lightgreen;
+  color:#000;
+}
+
+.tabber-tab[data-active="0"] {
+  color:#DDD;
+  background:#000;
+}
+
 #debug-box {
   height:10px;
 }

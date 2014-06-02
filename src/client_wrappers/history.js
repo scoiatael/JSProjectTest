@@ -33,13 +33,13 @@ function makeClientConnection(obj) {
       if(_.has(obj, 'on_data')) {
         obj.on_data.apply(this, arguments);
       }
-      if( Message.is_message(d) ) {
+/*      if( Message.is_message(d) ) {
         if(!(_.has(info, p) && typeof info[p] !== 'undefined')) {
           info[p] = []; 
         }
         info[p].push(Message.get_message(d));
       }
-    },
+*/    },
     on_close : function () {
       var iter;
       if(_.has(obj, 'on_close')) {
@@ -59,11 +59,18 @@ function makeClientConnection(obj) {
       return info[p];
     }
   }
+  function addMessage (p, m) {
+    if(!(_.has(info, p) && typeof info[p] !== 'undefined')) {
+      info[p] = []; 
+    }
+    info[p].push(m);
+  }
+
   return {
     opt : common.extend(obj, new_obj),
     extension : function(client) {
       is_connected = client.is_connected;
-      return _.extend(client, { get_history : getHist });
+      return _.extend(client, { get_history : getHist, add_message : addMessage });
     }
   };
 }
