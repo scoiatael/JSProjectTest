@@ -32,6 +32,7 @@ try {
         ];
   tabber = require('./tabber.js');
   messageDisplay = require('./messageDisplay.js');
+  objectDisplay = require('./objectDisplay.js');
   executionForm = require('./executionForm.js');
   addConnection = require('./addConnection.js');
 } catch(err) {
@@ -115,13 +116,16 @@ var connectionManager = React.createClass({
       <div id = 'main'>
         <div><h2>{this.getName()}</h2>
         </div>
-          <addConnection execute ={this.addConnection} /> 
+        <div id = 'top'>
           <tabber active={this.state.clicked} onClick={this.handleClick} items={this.generateTabs()} /> 
-        <div>
+          <addConnection execute ={this.addConnection} /> 
+        </div>
+        <div id='main-box'>
           <div id='message-box'>
             <messageDisplay messages={this.state.messages} name='messages'/> 
             <executionForm execute ={this.send} getSuggestions={this.state.connection.complete} /> 
           </div>
+          <objectDisplay object={{}} name='peers' />
         </div>
         <div id='debug-box'>
           <div id='command-box'>

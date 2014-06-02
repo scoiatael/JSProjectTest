@@ -1,3 +1,10 @@
+#main {
+  width:800px;
+  margin-left:50%;
+  position:absolute;
+  left:-400px;
+}
+
 #messages {
   width:600px;
   height:200px;
@@ -5,18 +12,48 @@
   overflow:scroll;
 }
 
+#peers {
+  width:200px;
+  height:223px;
+  background:#DDD;
+  overflow:scroll;
+}
+
 #commands {
   width:600px;
-  height:100px;
+  height:150px;
   background:#DDD;
   overflow:scroll;
 }
 
 #errors {
   width:200px;
-  height:200px;
+  height:173px;
   background:#DDD;
   overflow:scroll;
+}
+
+#top {
+  height:30px;
+}
+
+#execute-form {
+  float:left;
+}
+
+#tabber-div {
+  float:left;
+}
+
+#debug-box {
+  height:10px;
+}
+#debug-box:hover {
+  height:200px;
+}
+
+#main-box {
+  top:100px;
 }
 
 #error-box {
@@ -24,6 +61,10 @@
 }
 
 #message-box {
+  float:left;
+}
+
+#peer-box {
   float:left;
 }
 
@@ -39,3 +80,7 @@
   width:500px
 }
 
+#addC-img {
+  width:13px;
+  height:auto;
+}

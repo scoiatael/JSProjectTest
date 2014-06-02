@@ -18189,7 +18189,8 @@ var executionForm = (function () {
     render : function () {
       return (
         React.DOM.form( {id:"execute-form", onSubmit:handleSubmit.bind(this)} , 
-        React.DOM.button( {type:"submit", id:"addC-button"} , React.DOM.img( {src:"img/tab-new.png", alt:"connect"} ), " " ),
+        React.DOM.button( {type:"submit", id:"addC-button"} , 
+          React.DOM.img( {src:"img/tab-new.png", alt:"connect", id:"addC-img"} ), " " ),
         React.DOM.input( {type:"text", placeholder:"id..", ref:"text", id:"addC-text"})
         ));
     }
@@ -19261,6 +19262,7 @@ try {
         ];
   tabber = require('./tabber.js');
   messageDisplay = require('./messageDisplay.js');
+  objectDisplay = require('./objectDisplay.js');
   executionForm = require('./executionForm.js');
   addConnection = require('./addConnection.js');
 } catch(err) {
@@ -19344,13 +19346,16 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
       React.DOM.div( {id:  "main"}, 
         React.DOM.div(null, React.DOM.h2(null, this.getName())
         ),
-          addConnection( {execute: this.addConnection} ), 
+        React.DOM.div( {id:  "top"}, 
           tabber( {active:this.state.clicked, onClick:this.handleClick, items:this.generateTabs()} ), 
-        React.DOM.div(null, 
+          addConnection( {execute: this.addConnection} ) 
+        ),
+        React.DOM.div( {id:"main-box"}, 
           React.DOM.div( {id:"message-box"}, 
             messageDisplay( {messages:this.state.messages, name:"messages"}), 
             executionForm( {execute: this.send, getSuggestions:this.state.connection.complete} ) 
-          )
+          ),
+          objectDisplay( {object:{}, name:"peers"} )
         ),
         React.DOM.div( {id:"debug-box"}, 
           React.DOM.div( {id:"command-box"}, 
@@ -19412,7 +19417,7 @@ module.exports = function () {
   //React.renderComponent(< helloX name='World'/>, document.getElementById('js-content'));
 };
 
-},{"./addConnection.js":134,"./clientWrapper.js":136,"./client_wrappers/autocomplete.js":137,"./client_wrappers/check_status.js":138,"./client_wrappers/execute.js":139,"./client_wrappers/history.js":140,"./client_wrappers/metadata.js":141,"./client_wrappers/server_conn.js":142,"./executionForm.js":144,"./message.js":147,"./messageDisplay.js":148,"./tabber.js":149,"react":132,"underscore":133}],147:[function(require,module,exports){
+},{"./addConnection.js":134,"./clientWrapper.js":136,"./client_wrappers/autocomplete.js":137,"./client_wrappers/check_status.js":138,"./client_wrappers/execute.js":139,"./client_wrappers/history.js":140,"./client_wrappers/metadata.js":141,"./client_wrappers/server_conn.js":142,"./executionForm.js":144,"./message.js":147,"./messageDisplay.js":148,"./objectDisplay.js":149,"./tabber.js":150,"react":132,"underscore":133}],147:[function(require,module,exports){
 /**
  * message.js
  * Łukasz Czapliński, ii.uni.wroc.pl
@@ -19482,6 +19487,42 @@ var messageDisplay = React.createClass({displayName: 'messageDisplay',
 module.exports = messageDisplay;
 
 },{"react":132,"underscore":133}],149:[function(require,module,exports){
+/** @jsx React.DOM */
+/**
+ * objectDisplay.jsx
+ * , ii.uni.wroc.pl
+ * 02-06-2014
+ * */
+
+var _;
+var React;
+
+try {
+  _ = require('underscore');
+  React = require('react');
+} catch(err) {
+  /**
+   * sth
+   * */
+  console.error('(' + err.name + ')' + err.message);
+}
+
+var messageDisplay = React.createClass({displayName: 'messageDisplay',
+  render : function () {
+    return (
+      React.DOM.div( {id:this.props.name}, 
+       
+        _.map(this.props.object, function(val, k) {
+          return (React.DOM.div( {className:"message", key:k}, val));
+        })
+      
+      ))
+  },
+});
+
+module.exports = messageDisplay;
+
+},{"react":132,"underscore":133}],150:[function(require,module,exports){
 /** @jsx React.DOM */
 /**
  * tabber.jsx
