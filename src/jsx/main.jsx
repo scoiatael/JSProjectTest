@@ -155,8 +155,8 @@ var connectionManager = React.createClass({
         </div>
         <div id='debug-box'>
           <div id='command-box'>
-            <message_display messages={this.state.commands} name='commands'/> 
             <execution_form execute ={this.execute} getSuggestions={this.state.connection.complete} /> 
+            <message_display messages={this.state.commands} name='commands'/> 
           </div>
           <message_display messages={this.state.errors} name='errors' /> 
         </div>

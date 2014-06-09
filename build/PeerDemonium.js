@@ -19395,8 +19395,8 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
         ),
         React.DOM.div( {id:"debug-box"}, 
           React.DOM.div( {id:"command-box"}, 
-            message_display( {messages:this.state.commands, name:"commands"}), 
-            execution_form( {execute: this.execute, getSuggestions:this.state.connection.complete} ) 
+            execution_form( {execute: this.execute, getSuggestions:this.state.connection.complete} ), 
+            message_display( {messages:this.state.commands, name:"commands"}) 
           ),
           message_display( {messages:this.state.errors, name:"errors"} ) 
         )
