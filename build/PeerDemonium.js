@@ -19301,10 +19301,15 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
                      '-> ' + return_text]); 
    },
   send : function ( text ) {
-    var return_text = this.state.connection.send(this.activePeer(),text);
     newM = '-> ' + text;
     this.newMessage(newM);
     this.state.connection.add_message(this.activePeer(), newM);
+    var return_text;
+    if ( text[0] === "/" ) {
+      return_text = this.execute(text.substring(1));
+    } else {
+      return_text = this.state.connection.send(this.activePeer(),text);
+    }
   },
   addConnection : function(id) {
     this.state.connection.connect(id);
@@ -19338,7 +19343,7 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
     return this.state.connection.get_list()[i || this.state.clicked];
   },
   handleClick : function (i, tab) {
-    var peer = /.*\((.*)\)/.exec(tab);
+    var peer = /.*\( (.*) \)/.exec(tab)[1];
     this.setState({clicked : i, messages : this.state.connection.get_history(peer) || []});
     console.log('Active is ' + peer);
   },
@@ -19395,7 +19400,6 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
         ),
         React.DOM.div( {id:"debug-box"}, 
           React.DOM.div( {id:"command-box"}, 
-            execution_form( {execute: this.execute, getSuggestions:this.state.connection.complete} ), 
             message_display( {messages:this.state.commands, name:"commands"}) 
           ),
           message_display( {messages:this.state.errors, name:"errors"} ) 
