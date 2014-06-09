@@ -19366,7 +19366,15 @@ var connectionManager = React.createClass({displayName: 'connectionManager',
       }
     }, this);
     console.log(r);
-    return r;
+    var addName = { "change name": _.bind(function () {
+      var newName = window.prompt("Enter new name:", this.getName());
+      if(! _.isNull(newName) ) {
+           this.state.connection.set_metadata(
+               _.extend(this.state.connection.my_metadata(), { name : newName })
+               );
+      }
+    }, this)};
+    return _.extend(addName, r);
   },
   render : function () {
     return (
