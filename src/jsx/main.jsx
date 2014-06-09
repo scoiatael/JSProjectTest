@@ -13,9 +13,10 @@ var Message;
 var extend_client;
 var extensions = [];
 var tabber;
-var messageDisplay;
-var executionForm;
-var addConnection;
+var message_display;
+var execution_form;
+var add_connection;
+var object_display;
 
 try {
   _ = require('underscore');
@@ -31,10 +32,10 @@ try {
       require('./client_wrappers/server_conn.js')
         ];
   tabber = require('./tabber.js');
-  messageDisplay = require('./messageDisplay.js');
-  objectDisplay = require('./objectDisplay.js');
-  executionForm = require('./executionForm.js');
-  addConnection = require('./addConnection.js');
+  message_display = require('./messageDisplay.js');
+  object_display = require('./objectDisplay.js');
+  execution_form = require('./executionForm.js');
+  add_connection = require('./addConnection.js');
 } catch(err) {
   /**
    * sth
@@ -114,6 +115,18 @@ var connectionManager = React.createClass({
     }
     return r;
   },
+  createOptions : function () {
+    var r = {};
+    var ignored = this.state.connection.get_list().concat(this.state.connection.get_id());
+    console.log(ignored);
+    _.map(this.state.connection.get_peers(), function (v,k) { 
+      if(_.indexOf(ignored, k) === -1) {
+        r[(v.name || "") + "( " + k + " )"] = _.bind(function () { this.addConnection(k);}, this); 
+      }
+    }, this);
+    console.log(r);
+    return r;
+  },
   render : function () {
     return (
       <div id = 'main'>
@@ -121,21 +134,21 @@ var connectionManager = React.createClass({
         </div>
         <div id = 'top'>
           <tabber active={this.state.clicked} onClick={this.handleClick} items={this.generateTabs()} /> 
-          <addConnection execute ={this.addConnection} /> 
+          <add_connection execute ={this.addConnection} /> 
         </div>
         <div id='main-box'>
           <div id='message-box'>
-            <messageDisplay messages={this.state.messages} name='messages'/> 
-            <executionForm execute ={this.send} getSuggestions={this.state.connection.complete} /> 
+            <message_display messages={this.state.messages} name='messages'/> 
+            <execution_form execute ={this.send} getSuggestions={this.state.connection.complete} /> 
           </div>
-          <objectDisplay object={{}} name='peers' />
+          <object_display object={this.createOptions()} name='peers' />
         </div>
         <div id='debug-box'>
           <div id='command-box'>
-            <messageDisplay messages={this.state.commands} name='commands'/> 
-            <executionForm execute ={this.execute} getSuggestions={this.state.connection.complete} /> 
+            <message_display messages={this.state.commands} name='commands'/> 
+            <execution_form execute ={this.execute} getSuggestions={this.state.connection.complete} /> 
           </div>
-          <messageDisplay messages={this.state.errors} name='errors' /> 
+          <message_display messages={this.state.errors} name='errors' /> 
         </div>
       </div>
       );
@@ -157,7 +170,8 @@ var connectionManager = React.createClass({
           on_connection : _.bind(function(id) { this.pushToErrors('New connection from ' + id); }, this),
           on_open : _.bind(function(id) { this.pushToErrors('Chat with ' + id + ' opened'); }, this),
           on_create : _.bind(function(id) { this.pushToErrors('Connection opened'); }, this),
-          on_close : _.bind(function(id) { this.pushToErrors(id + ' left'); }, this)
+          on_close : _.bind(function(id) { this.pushToErrors(id + ' left'); }, this),
+          on_peer_update : _.bind(function() { console.log('peer_update'); this.forceUpdate(); }, this)
         }),
         extension_list: extensions
       })

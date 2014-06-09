@@ -134,6 +134,9 @@ function makeClientConnection(obj)
   };
   startCheckingPeers = (function() {
     return function () {
+      if(_.has(obj, 'on_peer_update')) {
+        obj.on_peer_update();
+      }
       knownPeers = reliablePeers;
       reliablePeers = {};
       _.each(get_list(), function(v,k) {

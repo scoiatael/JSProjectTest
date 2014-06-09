@@ -21,16 +21,23 @@
 
 #commands {
   width:600px;
+  height:15px;
+  background:#DDD;
+  overflow:scroll;
+}
+#commands:hover {
   height:150px;
+}
+
+#errors {
+  width: 200px;
+  height:39px;
   background:#DDD;
   overflow:scroll;
 }
 
-#errors {
-  width:200px;
+#errors:hover {
   height:173px;
-  background:#DDD;
-  overflow:scroll;
 }
 
 #top {
@@ -46,20 +53,13 @@
 }
 
 .tabber-tab[data-active="1"] {
-  background-color:lightgreen;
   color:#000;
+  background:#DDD;
 }
 
 .tabber-tab[data-active="0"] {
   color:#DDD;
   background:#000;
-}
-
-#debug-box {
-  height:10px;
-}
-#debug-box:hover {
-  height:200px;
 }
 
 #main-box {
@@ -80,6 +80,10 @@
 
 #command-box {
   float:left;
+}
+
+#debug-box {
+  float:bottom;
 }
 
 #post-button {

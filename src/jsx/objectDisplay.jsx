@@ -24,7 +24,8 @@ var messageDisplay = React.createClass({
       <div id={this.props.name}>
       { 
         _.map(this.props.object, function(val, k) {
-          return (<div className='message' key={k}>{val}</div>);
+          console.log(k);
+          return (<button className='oD-button' key={k} onClick={val}>{k}</button>);
         })
       }
       </div>)

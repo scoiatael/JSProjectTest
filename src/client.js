@@ -149,7 +149,7 @@ function makeClient (obj) {
       console.log('got sth from ' + who.toString());
       console.log(what);
     }
-    console.log((typeof what === 'object' && (what.type || what.toString())) || what.toString());
+   // console.log((typeof what === 'object' && (what.type || what.toString())) || what.toString());
     if(what === leaveMsg) {
       closeConnection(who);
     }
