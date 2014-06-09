@@ -206,10 +206,10 @@ var helloX = React.createClass({
 module.exports = function () { 
   function cleanup() {
     React.unmountComponentAtNode(document.getElementById('js-content'));
-    return "are you sure?";
   };
   window.addEventListener('beforeunload', cleanup);
-  window.addEventListener('beforereload', cleanup);
+  window.addEventListener('onbeforereload', cleanup);
+  window.onbeforeunload = cleanup;
   React.renderComponent(< connectionManager event={cleanup}/>, document.getElementById('js-content'));
   //React.renderComponent(< helloX name='World'/>, document.getElementById('js-content'));
 };
