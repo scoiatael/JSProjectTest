@@ -98,7 +98,7 @@ var connectionManager = React.createClass({
     return this.state.connection.get_list()[i || this.state.clicked];
   },
   handleClick : function (i, tab) {
-    var peer = /.*\((.*)\)/.exec(tab);
+    var peer = /.*\( (.*) \)/.exec(tab)[1];
     this.setState({clicked : i, messages : this.state.connection.get_history(peer) || []});
     console.log('Active is ' + peer);
   },
