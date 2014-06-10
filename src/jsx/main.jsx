@@ -97,13 +97,15 @@ var connectionManager = React.createClass({
   activePeer : function(i) {
     return this.state.connection.get_list()[i || this.state.clicked];
   },
-  handleClick : function (i, peer) {
+  handleClick : function (i, tab) {
+    var peer = /.*\((.*)\)/.exec(tab);
     this.setState({clicked : i, messages : this.state.connection.get_history(peer) || []});
     console.log('Active is ' + peer);
   },
   generateTabs : function() {
     return _.map(this.state.connection.get_list(), function(key) {
-      return (this.state.connection.get_metadata(key) || { name : key }).name || key;
+      var v = this.state.connection.get_metadata(key);
+      return (v.name || "") + "( " + key + " )";
     }, this );
   },
   getName : function () {
